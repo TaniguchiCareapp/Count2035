@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Count</title>
+    <title>Count & Earn</title>
     <style>
         body {
             margin: 0;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -16,11 +16,11 @@
             color: #ffffff;
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
         }
-        .title {
-            font-size: 2rem;
-            margin-bottom: 20px;
-            color: #bdc1c6;
-            letter-spacing: 2px;
+        .section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 30px 0;
         }
         .timer-container {
             display: flex;
@@ -28,55 +28,175 @@
             gap: 10px;
         }
         .timer {
-            font-size: 6rem;
+            font-size: 5rem;
             font-weight: bold;
             color: #8ab4f8;
-            /* 数字の幅を等幅にして、更新時のガタつきを防ぐ */
+            font-variant-numeric: tabular-nums; 
+        }
+        .money {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #81c995; 
             font-variant-numeric: tabular-nums; 
         }
         .unit {
-            font-size: 2.5rem;
+            font-size: 2rem;
             color: #bdc1c6;
+        }
+        
+        /* 入力フォームのデザイン */
+        .input-group {
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input[type="number"] {
+            padding: 12px;
+            font-size: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #5f6368;
+            background-color: #303134;
+            color: #ffffff;
+            width: 250px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            /* Firefox用の上下矢印非表示 */
+            -moz-appearance: textfield;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #8ab4f8;
+        }
+        /* Chrome, Safari, Edge用の上下矢印非表示 */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        /* 区切り線 */
+        hr {
+            width: 80%;
+            border: none;
+            border-top: 1px solid #5f6368;
+            margin: 20px 0;
         }
     </style>
 </head>
 <body>
 
-    <div class="title">Count</div>
-    <div class="timer-container">
-        <div class="timer" id="countdown"></div>
-        <div class="unit">秒</div>
+    <div class="section">
+        <div class="timer-container">
+            <div class="timer" id="countdown"></div>
+            <div class="unit">秒</div>
+        </div>
+    </div>
+
+    <hr>
+
+    <div class="section">
+        <div class="input-group">
+            <input type="number" id="salaryInput" placeholder="想定年収 (万円)" min="0" step="1">
+        </div>
+        
+        <div class="timer-container">
+            <div class="money" id="moneyEarned">0.000</div>
+            <div class="unit">円</div>
+        </div>
     </div>
 
     <script>
-        // 2035年1月1日 00:00:00 のタイムスタンプを取得
-        const targetDate = new Date('2035-01-01T00:00:00').getTime();
+        // --- 共通設定 ---
         const countdownElement = document.getElementById('countdown');
+        const moneyElement = document.getElementById('moneyEarned');
+        const salaryInput = document.getElementById('salaryInput');
+        
+        // 2035年のタイムスタンプ
+        const targetDate = new Date('2035-01-01T00:00:00').getTime();
 
-        function updateCountdown() {
-            const now = new Date().getTime();
-            const differenceMs = targetDate - now;
+        // 年間の労働秒数を計算 (月20日 × 12ヶ月 × 1日9.5時間)
+        const WORK_SECONDS_PER_YEAR = 20 * 12 * 9.5 * 3600;
 
+        // --- ローカルストレージから前回の保存データを読み込む ---
+        const savedSalary = localStorage.getItem('savedSalary');
+        if (savedSalary !== null) {
+            salaryInput.value = savedSalary;
+        }
+
+        // 年収が変更された時、ローカルストレージに保存する
+        salaryInput.addEventListener('input', () => {
+            localStorage.setItem('savedSalary', salaryInput.value);
+        });
+
+        // 今日の13:00と22:30のタイムスタンプを取得する関数
+        function getWorkTimeBounds(nowDate) {
+            const start = new Date(nowDate.getTime());
+            start.setHours(13, 0, 0, 0);
+
+            const end = new Date(nowDate.getTime());
+            end.setHours(22, 30, 0, 0);
+
+            return { start: start.getTime(), end: end.getTime() };
+        }
+
+        // 自動計算での今日の労働経過ミリ秒を計算する関数
+        function getAutoElapsedMs(nowMs) {
+            const now = new Date(nowMs);
+            const bounds = getWorkTimeBounds(now);
+
+            if (nowMs < bounds.start) {
+                // 13時前は一律0秒
+                return 0;
+            } else if (nowMs >= bounds.start && nowMs <= bounds.end) {
+                // 13時〜22時半の間は、13時からの経過時間
+                return nowMs - bounds.start;
+            } else {
+                // 22時半以降は、満額（9時間半＝34,200,000ミリ秒）で固定
+                return bounds.end - bounds.start;
+            }
+        }
+
+        function updateScreen() {
+            const nowMs = Date.now();
+
+            // 1. カウントダウンの処理（常に動く）
+            const differenceMs = targetDate - nowMs;
             if (differenceMs > 0) {
-                // ミリ秒を秒に変換し、小数点以下2桁にする（.toFixed(2)に戻す）
                 const secondsLeft = (differenceMs / 1000).toFixed(2);
-                
-                // 3桁ごとにカンマを入れて見やすくする処理
                 const parts = secondsLeft.split('.');
                 parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                
                 countdownElement.textContent = parts.join('.');
             } else {
-                // 2035年を迎えた場合（0.00に戻す）
                 countdownElement.textContent = "0.00";
             }
 
-            // 次の画面描画のタイミングで再度この関数を呼び出す（滑らかな更新）
-            requestAnimationFrame(updateCountdown);
+            // 2. 年収から稼いだ金額を計算する処理（完全自動）
+            const inputVal = parseFloat(salaryInput.value);
+            const salaryValue = inputVal * 10000; 
+
+            if (!isNaN(salaryValue) && salaryValue > 0) {
+                const moneyPerSecond = salaryValue / WORK_SECONDS_PER_YEAR;
+                
+                // 完全自動で経過時間を取得
+                const elapsedMs = getAutoElapsedMs(nowMs);
+                const elapsedSeconds = elapsedMs / 1000;
+                const earned = moneyPerSecond * elapsedSeconds;
+
+                const moneyStr = earned.toFixed(3);
+                const parts = moneyStr.split('.');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                moneyElement.textContent = parts.join('.');
+            } else {
+                moneyElement.textContent = "0.000";
+            }
+
+            // 次の画面描画タイミングでループ実行
+            requestAnimationFrame(updateScreen);
         }
 
-        // 初回実行を開始
-        requestAnimationFrame(updateCountdown);
+        // 初回実行
+        requestAnimationFrame(updateScreen);
     </script>
 
 </body>
