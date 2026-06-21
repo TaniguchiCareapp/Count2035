@@ -3,164 +3,858 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Count & Earn</title>
+    <title>Count & Earn Dashboard</title>
     <style>
+        :root {
+            --bg-color: #0d0e12;
+            --card-bg: #16171f;
+            --border-color: #242633;
+            --text-primary: #ffffff;
+            --text-secondary: #7e8494;
+            --blue-accent: #4d82f3;
+            --green-accent: #34d399;
+            --red-accent: #f25c5c;
+            --progress-empty: #1e202c;
+        }
+
         body {
             margin: 0;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
-            background-color: #202124;
-            color: #ffffff;
-            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            letter-spacing: -0.02em;
         }
-        .section {
+
+        .dashboard-container {
+            width: 100%;
+            max-width: 960px;
+            padding: 24px;
+            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 32px 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
             align-items: center;
-            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
         }
-        .timer-container {
+
+        .left-side::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(77, 130, 243, 0.02) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .right-side::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(52, 211, 153, 0.02) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .display-container {
             display: flex;
             align-items: baseline;
-            gap: 10px;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 24px;
         }
-        .timer {
-            font-size: 5rem;
-            font-weight: bold;
-            color: #8ab4f8;
-            font-variant-numeric: tabular-nums; 
+
+        .value {
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.04em;
+            white-space: nowrap;
         }
-        .money {
-            font-size: 5rem;
-            font-weight: bold;
-            color: #81c995; 
-            font-variant-numeric: tabular-nums; 
+
+        .value.time {
+            font-size: 2.6rem;
+            color: var(--blue-accent);
+            text-shadow: 0 0 40px rgba(77, 130, 243, 0.15);
         }
+
+        .value.money {
+            font-size: 2.8rem;
+            color: var(--green-accent);
+            text-shadow: 0 0 40px rgba(52, 211, 153, 0.15);
+        }
+
         .unit {
-            font-size: 2rem;
-            color: #bdc1c6;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+
+        .card-title {
+            width: 100%;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.08em;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 10px;
+        }
+
+        /* タイムラインの3Dレイヤー化 */
+        .timeline-container {
+            width: 100%;
+            height: 500px;
+            position: relative;
+            margin: 10px 0;
+            transform-style: preserve-3d;
+        }
+
+        .timeline-grid-line {
+            position: absolute;
+            left: 55px;
+            right: 0;
+            border-top: 1px dashed rgba(255, 255, 255, 0.04);
+            transform: translateZ(1px);
+        }
+        .timeline-grid-line.active-zone {
+            border-top: 1px dashed rgba(77, 130, 243, 0.15);
+        }
+
+        .timeline-label {
+            position: absolute;
+            left: 0;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.2);
+            font-variant-numeric: tabular-nums;
+            transform: translateY(-50%) translateZ(4px);
+            transition: color 0.3s ease, font-size 0.3s ease;
+        }
+        .timeline-label.highlight-label {
+            color: var(--blue-accent);
+            font-weight: 700;
+            font-size: 0.85rem;
+        }
+
+        .schedule-node {
+            position: absolute;
+            left: 65px;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transform: translateY(-50%) translateZ(4px);
+        }
+
+        .node-text {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 8px;
+            text-shadow: 0 0 8px rgba(22, 23, 31, 1);
+            cursor: pointer;
+            transition: color 0.3s ease;
+            background-color: var(--card-bg);
+            padding-left: 2px;
+        }
+        .schedule-node.imminent .node-text {
+            color: var(--red-accent) !important;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(242, 92, 92, 0.3);
+            background-color: var(--card-bg);
         }
         
-        /* 入力フォームのデザイン */
-        .input-group {
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        /* 編集用インライン入力フォーム */
+        .edit-input-text {
+            background-color: var(--card-bg) !important;
+            border: 1px solid var(--blue-accent);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            border-radius: 4px;
+            padding: 2px 6px;
+            width: 90%;
         }
-        input[type="number"] {
-            padding: 12px;
-            font-size: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid #5f6368;
-            background-color: #303134;
-            color: #ffffff;
-            width: 250px;
+        .edit-input-reward-text {
+            background-color: var(--card-bg) !important;
+            border: 1px solid var(--green-accent);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            border-radius: 4px;
+            padding: 2px 6px;
+            width: 90%;
+        }
+        .edit-input-time {
+            background-color: var(--card-bg) !important;
+            border: 1px solid var(--blue-accent);
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            border-radius: 4px;
+            padding: 1px 4px;
+            font-family: inherit;
+        }
+        .edit-input-reward-price {
+            background-color: var(--card-bg) !important;
+            border: 1px solid var(--green-accent);
+            color: var(--green-accent);
+            font-size: 0.85rem;
+            border-radius: 4px;
+            padding: 2px 6px;
+            width: 90px;
             text-align: right;
+        }
+
+        .node-time-tag {
+            font-size: 0.75rem;
+            font-weight: 600;
+            background-color: var(--card-bg); 
+            color: var(--text-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
             font-variant-numeric: tabular-nums;
-            /* Firefox用の上下矢印非表示 */
+            cursor: pointer;
+            transform: translateZ(5px);
+        }
+        .schedule-node.imminent .node-time-tag {
+            background-color: var(--card-bg) !important; 
+            color: var(--red-accent);
+            border-color: rgba(242, 92, 92, 0.4);
+            box-shadow: 0 0 8px rgba(242, 92, 92, 0.1);
+        }
+
+        .node-delete-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            margin-left: 4px;
+            background-color: var(--card-bg);
+            transform: translateZ(5px);
+        }
+        .node-delete-btn:hover {
+            color: var(--red-accent);
+            background-color: rgba(242, 92, 92, 0.1);
+        }
+
+        /* スケジュール＆メーターの追加フォーム */
+        .schedule-form, .reward-form {
+            width: 100%;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            gap: 8px;
+            box-sizing: border-box;
+        }
+
+        input[type="time"].form-time {
+            padding: 8px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+            font-family: inherit;
+        }
+
+        input[type="text"].form-text {
+            flex-grow: 1;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+        }
+
+        input[type="number"].form-number {
+            width: 80px;
+            padding: 8px 10px;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--green-accent);
+            text-align: right;
+        }
+
+        input:focus {
+            outline: none;
+        }
+        .left-side input:focus { border-color: var(--blue-accent) !important; }
+        .right-side input:focus { border-color: var(--green-accent) !important; }
+
+        .add-btn {
+            background-color: rgba(77, 130, 243, 0.15);
+            border: 1px solid var(--blue-accent);
+            color: var(--blue-accent);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .add-btn:hover {
+            background-color: var(--blue-accent);
+            color: var(--text-primary);
+        }
+
+        .right-side .add-btn {
+            background-color: rgba(52, 211, 153, 0.15);
+            border: 1px solid var(--green-accent);
+            color: var(--green-accent);
+        }
+        .right-side .add-btn:hover {
+            background-color: var(--green-accent);
+            color: var(--bg-color);
+        }
+
+        /* 基準額入力欄のラッパー */
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .input-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+
+        .input-wrapper input[type="number"] {
+            width: 140px;
+            padding: 10px 16px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+            text-align: center;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+            font-variant-numeric: tabular-nums;
+        }
+        .input-wrapper input[type="number"]:focus {
+            border-color: var(--green-accent);
+            background-color: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.1);
+        }
+
+        /* number入力フォームから上下矢印（スピンボタン）を完全に非表示 */
+        input[type="number"] {
             -moz-appearance: textfield;
         }
-        input[type="number"]:focus {
-            outline: none;
-            border-color: #8ab4f8;
-        }
-        /* Chrome, Safari, Edge用の上下矢印非表示 */
         input[type="number"]::-webkit-outer-spin-button,
         input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
-        
-        /* 区切り線 */
-        hr {
-            width: 80%;
+
+        /* メーターリスト */
+        .meter-list {
+            width: 100%;
+            margin-top: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            padding-top: 24px;
+            flex-grow: 1;
+        }
+
+        .meter-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .meter-row.achieved {
+            color: var(--text-primary);
+        }
+
+        .reward-tag-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .reward-tag {
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .reward-price-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .reward-price {
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .meter-row.achieved .reward-price {
+            color: var(--green-accent);
+        }
+
+        .reward-delete-btn {
+            background: none;
             border: none;
-            border-top: 1px solid #5f6368;
-            margin: 20px 0;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            opacity: 0;
+        }
+        .meter-row:hover .reward-delete-btn {
+            opacity: 1;
+        }
+        .reward-delete-btn:hover {
+            color: var(--red-accent);
+            background-color: rgba(242, 92, 92, 0.1);
+        }
+
+        /* タイムラインの現在時刻線スタイル */
+        .current-time-line {
+            position: absolute;
+            left: 55px;
+            right: 0;
+            height: 2px;
+            background-color: var(--blue-accent);
+            box-shadow: 0 0 12px var(--blue-accent), 0 0 4px var(--blue-accent);
+            z-index: 10;
+            pointer-events: none;
+            transform: translateZ(6px);
+            display: none; /* 初期状態は非表示 */
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background-color: var(--progress-empty);
+            border-radius: 2px;
+            margin-top: 24px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--blue-accent), var(--green-accent));
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="section">
-        <div class="timer-container">
-            <div class="timer" id="countdown"></div>
-            <div class="unit">Se</div>
-        </div>
-    </div>
-
-    <hr>
-
-    <div class="section">
-        <div class="input-group">
-            <input type="number" id="salaryInput" placeholder="単位：万" min="0" step="1">
-        </div>
+    <div class="dashboard-container">
         
-        <div class="timer-container">
-            <div class="money" id="moneyEarned">0.000</div>
-            <div class="unit">JPY</div>
+        <div class="card left-side">
+            <div class="display-container">
+                <div class="value time" id="countdown"></div>
+                <div class="unit">SEC</div>
+            </div>
+
+            <div class="card-title">Today's Schedule</div>
+            
+            <div class="timeline-container" id="timelineContainer">
+                <div class="current-time-line" id="currentTimeLine"></div>
+            </div>
+
+            <div class="schedule-form">
+                <input type="time" id="newPlanTime" class="form-time" value="13:00">
+                <input type="text" id="newPlanText" class="form-text" placeholder="新しい予定を入力...">
+                <button id="addPlanBtn" class="add-btn">追加</button>
+            </div>
         </div>
+
+        <div class="card right-side">
+            <div class="input-wrapper">
+                <div class="input-label">基準額</div>
+                <input type="number" id="salaryInput" placeholder="想定年収 (万円)" min="0" step="1">
+            </div>
+            
+            <div class="display-container">
+                <div class="value money" id="moneyEarned">0.000</div>
+                <div class="unit">JPY</div>
+            </div>
+
+            <div class="card-title">Rewards Meter</div>
+
+            <div class="meter-list" id="meterList"></div>
+
+            <div class="reward-form">
+                <input type="text" id="newRewardText" class="form-text" placeholder="新しい目標を入力...">
+                <input type="number" id="newRewardPrice" class="form-number" placeholder="金額" min="0">
+                <button id="addRewardBtn" class="add-btn">追加</button>
+            </div>
+
+            <div class="progress-track">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        // --- 共通設定 ---
         const countdownElement = document.getElementById('countdown');
         const moneyElement = document.getElementById('moneyEarned');
         const salaryInput = document.getElementById('salaryInput');
+        const meterList = document.getElementById('meterList');
+        const progressFill = document.getElementById('progressFill');
+        const timelineContainer = document.getElementById('timelineContainer');
+        const currentTimeLine = document.getElementById('currentTimeLine');
         
-        // 2035年のタイムスタンプ
-        const targetDate = new Date('2035-01-01T00:00:00').getTime();
+        const newPlanTime = document.getElementById('newPlanTime');
+        const newPlanText = document.getElementById('newPlanText');
+        const addPlanBtn = document.getElementById('addPlanBtn');
 
-        // 年間の労働秒数を計算 (月20日 × 12ヶ月 × 1日9.5時間)
+        const newRewardText = document.getElementById('newRewardText');
+        const newRewardPrice = document.getElementById('newRewardPrice');
+        const addRewardBtn = document.getElementById('addRewardBtn');
+
+        const targetDate = new Date('2035-01-01T00:00:00').getTime();
         const WORK_SECONDS_PER_YEAR = 20 * 12 * 9.5 * 3600;
 
-        // --- ローカルストレージから前回の保存データを読み込む ---
+        const START_MINS = 9 * 60;          
+        const END_MINS = 24 * 60;           
+        const TOTAL_MINS = END_MINS - START_MINS; 
+
+        // 背景グリッド生成
+        for (let h = 9; h <= 24; h++) {
+            const currentMins = h * 60;
+            const percent = ((currentMins - START_MINS) / TOTAL_MINS) * 100;
+
+            const label = document.createElement('div');
+            label.className = 'timeline-label';
+            label.id = `label-hour-${h}`;
+            label.style.top = `${percent}%`;
+            label.textContent = `${String(h).padStart(2, '0')}:00`;
+            timelineContainer.appendChild(label);
+
+            const line = document.createElement('div');
+            line.className = 'timeline-grid-line';
+            line.style.top = `${percent}%`;
+            
+            if (h >= 13 && h <= 22) {
+                line.classList.add('active-zone');
+            }
+            timelineContainer.appendChild(line);
+        }
+
+        // --- スケジュールデータ管理 ---
+        const defaultPlans = [
+            { time: '13:00', text: '業務開始 / メールチェック' },
+            { time: '15:00', text: '定例ミーティング' },
+            { time: '18:00', text: '夕休憩' }
+        ];
+        let todayPlans = JSON.parse(localStorage.getItem('todayPlans')) || defaultPlans;
+
+        // --- メーターデータ管理 ---
+        const defaultRewards = [
+            { price: 150,  label: '☕️ 缶コーヒー' },
+            { price: 400,  label: '🥪 コンビニ軽食' },
+            { price: 1000, label: '🍛 しっかりランチ' },
+            { price: 1500, label: '🍰 ご褒美スイーツ' }
+        ];
+        let rewardItems = JSON.parse(localStorage.getItem('rewardItems')) || defaultRewards;
+        let MAX_GOAL = rewardItems.length > 0 ? rewardItems[rewardItems.length - 1].price : 1500;
+
+        function getTimePercentage(timeStr) {
+            const [h, m] = timeStr.split(':').map(Number);
+            const currentMins = h * 60 + m;
+            if (currentMins < START_MINS) return 0;
+            if (currentMins > END_MINS) return 100;
+            return ((currentMins - START_MINS) / TOTAL_MINS) * 100;
+        }
+
+        function renderSchedule() {
+            const oldNodes = timelineContainer.querySelectorAll('.schedule-node');
+            oldNodes.forEach(node => node.remove());
+
+            todayPlans.sort((a, b) => a.time.localeCompare(b.time));
+
+            todayPlans.forEach((plan, index) => {
+                const percent = getTimePercentage(plan.time);
+                const node = document.createElement('div');
+                node.className = 'schedule-node';
+                node.id = `plan-node-${index}`;
+                node.dataset.time = plan.time;
+                node.style.top = `${percent}%`;
+                
+                node.innerHTML = `
+                    <div class="node-text" onclick="startEdit(${index}, 'text')" title="クリックして編集">${plan.text}</div>
+                    <div style="display: flex; align-items: center;">
+                        <div class="node-time-tag" onclick="startEdit(${index}, 'time')" title="クリックして時間変更">${plan.time}</div>
+                        <button class="node-delete-btn" onclick="deletePlan(${index})">✕</button>
+                    </div>
+                `;
+                timelineContainer.appendChild(node);
+            });
+            
+            localStorage.setItem('todayPlans', JSON.stringify(todayPlans));
+            checkImminentPlans();
+        }
+
+        window.startEdit = function(index, type) {
+            const node = document.getElementById(`plan-node-${index}`);
+            if (type === 'text') {
+                const textEl = node.querySelector('.node-text');
+                const currentText = todayPlans[index].text;
+                textEl.removeAttribute('onclick');
+                textEl.innerHTML = `<input type="text" class="edit-input-text" value="${currentText}">`;
+                const input = textEl.querySelector('input');
+                input.focus();
+                input.addEventListener('blur', () => saveEdit(index, input.value, 'text'));
+                input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+            } else if (type === 'time') {
+                const timeEl = node.querySelector('.node-time-tag');
+                const currentTime = todayPlans[index].time;
+                timeEl.removeAttribute('onclick');
+                timeEl.innerHTML = `<input type="time" class="edit-input-time" value="${currentTime}">`;
+                const input = timeEl.querySelector('input');
+                input.focus();
+                input.addEventListener('blur', () => saveEdit(index, input.value, 'time'));
+                input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+            }
+        };
+
+        function saveEdit(index, val, type) {
+            const cleanVal = val.trim();
+            if (cleanVal !== '') {
+                if (type === 'text') todayPlans[index].text = cleanVal;
+                if (type === 'time') todayPlans[index].time = cleanVal;
+            }
+            renderSchedule();
+        }
+
+        addPlanBtn.addEventListener('click', () => {
+            const time = newPlanTime.value;
+            const text = newPlanText.value.trim();
+            if (text === '') return;
+            todayPlans.push({ time: time, text: text });
+            newPlanText.value = '';
+            renderSchedule();
+        });
+
+        window.deletePlan = function(index) {
+            todayPlans.splice(index, 1);
+            renderSchedule();
+        };
+
+        function renderRewards() {
+            meterList.innerHTML = ''; 
+            rewardItems.sort((a, b) => a.price - b.price);
+            MAX_GOAL = rewardItems.length > 0 ? rewardItems[rewardItems.length - 1].price : 1500;
+
+            rewardItems.forEach((item, index) => {
+                const row = document.createElement('div');
+                row.id = `reward-row-${index}`;
+                row.className = 'meter-row';
+                row.innerHTML = `
+                    <div class="reward-tag-container">
+                        <span class="status-icon">⚪︎</span>
+                        <span class="reward-tag" onclick="startRewardEdit(${index}, 'label')" title="クリックして変更">${item.label}</span>
+                    </div>
+                    <div class="reward-price-wrapper">
+                        <div class="reward-price" onclick="startRewardEdit(${index}, 'price')" title="クリックして金額変更">${item.price.toLocaleString()}</div>
+                        <button class="reward-delete-btn" onclick="deleteReward(${index})">✕</button>
+                    </div>
+                `;
+                meterList.appendChild(row);
+            });
+            localStorage.setItem('rewardItems', JSON.stringify(rewardItems));
+        }
+
+        addRewardBtn.addEventListener('click', () => {
+            const label = newRewardText.value.trim();
+            const price = parseInt(newRewardPrice.value, 10);
+
+            if (label === '' || isNaN(price) || price < 0) return;
+
+            rewardItems.push({ price: price, label: label });
+            newRewardText.value = '';
+            newRewardPrice.value = '';
+            renderRewards();
+        });
+
+        window.deleteReward = function(index) {
+            rewardItems.splice(index, 1);
+            renderRewards();
+        };
+
+        window.startRewardEdit = function(index, type) {
+            const row = document.getElementById(`reward-row-${index}`);
+            if (type === 'label') {
+                const tagEl = row.querySelector('.reward-tag');
+                const currentLabel = rewardItems[index].label;
+                tagEl.removeAttribute('onclick');
+                tagEl.innerHTML = `<input type="text" class="edit-input-reward-text" value="${currentLabel}">`;
+                
+                const input = tagEl.querySelector('input');
+                input.focus();
+                input.addEventListener('blur', () => saveRewardEdit(index, input.value, 'label'));
+                input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+            } else if (type === 'price') {
+                const priceEl = row.querySelector('.reward-price');
+                const currentPrice = rewardItems[index].price;
+                priceEl.removeAttribute('onclick');
+                priceEl.innerHTML = `<input type="number" class="edit-input-reward-price" value="${currentPrice}" min="0">`;
+                
+                const input = priceEl.querySelector('input');
+                input.focus();
+                input.addEventListener('blur', () => saveRewardEdit(index, input.value, 'price'));
+                input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
+            }
+        };
+
+        function saveRewardEdit(index, val, type) {
+            const cleanVal = val.trim();
+            if (cleanVal !== '') {
+                if (type === 'label') {
+                    rewardItems[index].label = cleanVal;
+                }
+                if (type === 'price') {
+                    const num = parseInt(cleanVal, 10);
+                    if (!isNaN(num) && num >= 0) rewardItems[index].price = num;
+                }
+            }
+            renderRewards();
+        }
+
+        renderSchedule();
+        renderRewards();
+
         const savedSalary = localStorage.getItem('savedSalary');
         if (savedSalary !== null) {
             salaryInput.value = savedSalary;
         }
+        salaryInput.value = savedSalary || "";
 
-        // 年収が変更された時、ローカルストレージに保存する
         salaryInput.addEventListener('input', () => {
             localStorage.setItem('savedSalary', salaryInput.value);
         });
 
-        // 今日の13:00と22:30のタイムスタンプを取得する関数
         function getWorkTimeBounds(nowDate) {
             const start = new Date(nowDate.getTime());
             start.setHours(13, 0, 0, 0);
-
             const end = new Date(nowDate.getTime());
             end.setHours(22, 30, 0, 0);
-
             return { start: start.getTime(), end: end.getTime() };
         }
 
-        // 自動計算での今日の労働経過ミリ秒を計算する関数
         function getAutoElapsedMs(nowMs) {
             const now = new Date(nowMs);
             const bounds = getWorkTimeBounds(now);
+            if (nowMs < bounds.start) return 0;
+            if (nowMs >= bounds.start && nowMs <= bounds.end) return nowMs - bounds.start;
+            return bounds.end - bounds.start;
+        }
 
-            if (nowMs < bounds.start) {
-                // 13時前は一律0秒
-                return 0;
-            } else if (nowMs >= bounds.start && nowMs <= bounds.end) {
-                // 13時〜22時半の間は、13時からの経過時間
-                return nowMs - bounds.start;
+        function checkImminentPlans() {
+            const now = new Date();
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            const nodes = timelineContainer.querySelectorAll('.schedule-node');
+
+            nodes.forEach(node => {
+                const tStr = node.dataset.time;
+                if (!tStr) return;
+                const [h, m] = tStr.split(':').map(Number);
+                const targetMins = h * 60 + m;
+
+                const diff = targetMins - currentMins;
+
+                if (diff >= 0 && diff <= 20) {
+                    node.classList.add('imminent');
+                } else {
+                    node.classList.remove('imminent');
+                }
+            });
+        }
+
+        // --- 修正：24:00までバーを消さずに移動させる ---
+        function updateTimeLine(nowMs) {
+            const now = new Date(nowMs);
+            const currentHour = now.getHours();
+            const currentMins = currentHour * 60 + now.getMinutes();
+            
+            const allLabels = timelineContainer.querySelectorAll('.timeline-label');
+            allLabels.forEach(lbl => lbl.classList.remove('highlight-label'));
+
+            // 表示条件を終了時間の24:00（END_MINS）までに変更
+            if (currentMins >= START_MINS && currentMins <= END_MINS) {
+                const ratio = (currentMins - START_MINS) / TOTAL_MINS;
+                const percent = ratio * 100;
+                currentTimeLine.style.top = `${percent}%`;
+                currentTimeLine.style.display = 'block';
+
+                const activeLabel = document.getElementById(`label-hour-${currentHour}`);
+                if (activeLabel) {
+                    activeLabel.classList.add('highlight-label');
+                }
             } else {
-                // 22時半以降は、満額（9時間半＝34,200,000ミリ秒）で固定
-                return bounds.end - bounds.start;
+                currentTimeLine.style.display = 'none';
             }
         }
 
         function updateScreen() {
             const nowMs = Date.now();
 
-            // 1. カウントダウンの処理（常に動く）
+            // 1. カウントダウン
             const differenceMs = targetDate - nowMs;
             if (differenceMs > 0) {
                 const secondsLeft = (differenceMs / 1000).toFixed(2);
@@ -171,14 +865,12 @@
                 countdownElement.textContent = "0.00";
             }
 
-            // 2. 年収から稼いだ金額を計算する処理（完全自動）
+            // 2. 給与計算
             const inputVal = parseFloat(salaryInput.value);
             const salaryValue = inputVal * 10000; 
 
             if (!isNaN(salaryValue) && salaryValue > 0) {
                 const moneyPerSecond = salaryValue / WORK_SECONDS_PER_YEAR;
-                
-                // 完全自動で経過時間を取得
                 const elapsedMs = getAutoElapsedMs(nowMs);
                 const elapsedSeconds = elapsedMs / 1000;
                 const earned = moneyPerSecond * elapsedSeconds;
@@ -187,15 +879,46 @@
                 const parts = moneyStr.split('.');
                 parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                 moneyElement.textContent = parts.join('.');
+
+                // 3. メーター
+                rewardItems.forEach((item, index) => {
+                    const row = document.getElementById(`reward-row-${index}`);
+                    if (!row) return;
+                    const iconSpan = row.querySelector('.status-icon');
+                    if (earned >= item.price) {
+                        if (!row.classList.contains('achieved')) {
+                            row.classList.add('achieved');
+                            iconSpan.textContent = '⚫︎';
+                            iconSpan.style.color = 'var(--green-accent)';
+                        }
+                    } else {
+                        row.classList.remove('achieved');
+                        iconSpan.textContent = '⚪︎';
+                        iconSpan.style.color = 'var(--text-secondary)';
+                    }
+                });
+
+                // 4. プログレスバー
+                const progressPercent = Math.min((earned / MAX_GOAL) * 100, 100);
+                progressFill.style.width = `${progressPercent}%`;
+
             } else {
                 moneyElement.textContent = "0.000";
+                progressFill.style.width = "0%";
+                rewardItems.forEach((item, index) => {
+                    const row = document.getElementById(`reward-row-${index}`);
+                    if (!row) return;
+                    row.classList.remove('achieved');
+                    row.querySelector('.status-icon').textContent = '⚪︎';
+                });
             }
 
-            // 次の画面描画タイミングでループ実行
+            updateTimeLine(nowMs);
+            checkImminentPlans();
+
             requestAnimationFrame(updateScreen);
         }
 
-        // 初回実行
         requestAnimationFrame(updateScreen);
     </script>
 
