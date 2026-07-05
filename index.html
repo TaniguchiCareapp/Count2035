@@ -166,6 +166,25 @@
             transform: translateY(-50%) translateZ(4px);
         }
 
+        .plan-check-icon {
+            cursor: pointer;
+            margin-right: 6px;
+            color: var(--text-secondary);
+            font-size: 1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            transition: color 0.2s;
+        }
+        .plan-check-icon:hover {
+            color: var(--blue-accent);
+        }
+        .plan-check-icon.checked {
+            color: var(--green-accent);
+        }
+
         .node-text {
             font-size: 0.85rem;
             font-weight: 500;
@@ -176,11 +195,17 @@
             padding-right: 8px;
             text-shadow: 0 0 8px rgba(22, 23, 31, 1);
             cursor: pointer;
-            transition: color 0.3s ease;
+            transition: color 0.3s ease, opacity 0.3s ease;
             background-color: var(--card-bg);
             padding-left: 2px;
         }
-        .schedule-node.imminent .node-text {
+        .node-text.completed {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+
+        .schedule-node.imminent .node-text:not(.completed) {
             color: var(--red-accent) !important;
             font-weight: 700;
             text-shadow: 0 0 10px rgba(242, 92, 92, 0.3);
@@ -227,22 +252,29 @@
         }
 
         .node-time-tag {
-            font-size: 0.75rem;
-            font-weight: 600;
-            background-color: var(--card-bg); 
+            font-size: 1.1rem;
+            background-color: transparent; 
             color: var(--text-secondary);
-            padding: 2px 6px;
+            padding: 2px 4px;
             border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            font-variant-numeric: tabular-nums;
+            border: none;
             cursor: pointer;
             transform: translateZ(5px);
+            transition: transform 0.2s;
         }
+        .node-time-tag:hover {
+            transform: scale(1.1) translateZ(5px);
+        }
+
         .schedule-node.imminent .node-time-tag {
-            background-color: var(--card-bg) !important; 
             color: var(--red-accent);
-            border-color: rgba(242, 92, 92, 0.4);
-            box-shadow: 0 0 8px rgba(242, 92, 92, 0.1);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) translateZ(5px); }
+            50% { transform: scale(1.2) translateZ(5px); text-shadow: 0 0 8px rgba(242,92,92,0.6); }
+            100% { transform: scale(1) translateZ(5px); }
         }
 
         .node-delete-btn {
@@ -598,11 +630,16 @@
 
         // --- スケジュールデータ管理 ---
         const defaultPlans = [
-            { time: '13:00', text: '業務開始 / メールチェック' },
-            { time: '15:00', text: '定例ミーティング' },
-            { time: '18:00', text: '夕休憩' }
+            { time: '13:00', text: '業務開始 / メールチェック', completed: false },
+            { time: '15:00', text: '定例ミーティング', completed: false },
+            { time: '18:00', text: '夕休憩', completed: false }
         ];
         let todayPlans = JSON.parse(localStorage.getItem('todayPlans')) || defaultPlans;
+
+        // 古いデータへの対応（completedプロパティがない場合）
+        todayPlans.forEach(plan => {
+            if (typeof plan.completed === 'undefined') plan.completed = false;
+        });
 
         // --- メーターデータ管理 ---
         const defaultRewards = [
@@ -636,10 +673,18 @@
                 node.dataset.time = plan.time;
                 node.style.top = `${percent}%`;
                 
+                // チェック状態のクラス付与
+                const checkClass = plan.completed ? 'checked' : '';
+                const textClass = plan.completed ? 'completed' : '';
+                const checkIcon = plan.completed ? '✔' : '○';
+
                 node.innerHTML = `
-                    <div class="node-text" onclick="startEdit(${index}, 'text')" title="クリックして編集">${plan.text}</div>
+                    <div style="display: flex; align-items: center; overflow: hidden; flex-grow: 1;">
+                        <div class="plan-check-icon ${checkClass}" onclick="togglePlan(${index})" title="完了/未完了の切り替え">${checkIcon}</div>
+                        <div class="node-text ${textClass}" onclick="startEdit(${index}, 'text')" title="クリックして編集">${plan.text}</div>
+                    </div>
                     <div style="display: flex; align-items: center;">
-                        <div class="node-time-tag" onclick="startEdit(${index}, 'time')" title="クリックして時間変更">${plan.time}</div>
+                        <div class="node-time-tag" onclick="startEdit(${index}, 'time')" title="クリックして時間変更">🕒</div>
                         <button class="node-delete-btn" onclick="deletePlan(${index})">✕</button>
                     </div>
                 `;
@@ -649,6 +694,12 @@
             localStorage.setItem('todayPlans', JSON.stringify(todayPlans));
             checkImminentPlans();
         }
+
+        // 完了状態のトグル機能
+        window.togglePlan = function(index) {
+            todayPlans[index].completed = !todayPlans[index].completed;
+            renderSchedule();
+        };
 
         window.startEdit = function(index, type) {
             const node = document.getElementById(`plan-node-${index}`);
@@ -665,6 +716,7 @@
                 const timeEl = node.querySelector('.node-time-tag');
                 const currentTime = todayPlans[index].time;
                 timeEl.removeAttribute('onclick');
+                // アイコンを一時的にインプットフィールドに置き換える
                 timeEl.innerHTML = `<input type="time" class="edit-input-time" value="${currentTime}">`;
                 const input = timeEl.querySelector('input');
                 input.focus();
@@ -686,7 +738,7 @@
             const time = newPlanTime.value;
             const text = newPlanText.value.trim();
             if (text === '') return;
-            todayPlans.push({ time: time, text: text });
+            todayPlans.push({ time: time, text: text, completed: false });
             newPlanText.value = '';
             renderSchedule();
         });
@@ -826,7 +878,6 @@
             });
         }
 
-        // --- 修正：24:00までバーを消さずに移動させる ---
         function updateTimeLine(nowMs) {
             const now = new Date(nowMs);
             const currentHour = now.getHours();
@@ -835,7 +886,6 @@
             const allLabels = timelineContainer.querySelectorAll('.timeline-label');
             allLabels.forEach(lbl => lbl.classList.remove('highlight-label'));
 
-            // 表示条件を終了時間の24:00（END_MINS）までに変更
             if (currentMins >= START_MINS && currentMins <= END_MINS) {
                 const ratio = (currentMins - START_MINS) / TOTAL_MINS;
                 const percent = ratio * 100;
