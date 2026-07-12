@@ -21,12 +21,40 @@
             margin: 0;
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             background-color: var(--bg-color);
             color: var(--text-primary);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             letter-spacing: -0.02em;
+            position: relative;
+        }
+
+        /* 画面右上用コントロールエリア */
+        .global-controls {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            z-index: 100;
+        }
+
+        .clear-btn {
+            background-color: rgba(242, 92, 92, 0.1);
+            border: 1px solid rgba(242, 92, 92, 0.3);
+            color: var(--red-accent);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .clear-btn:hover {
+            background-color: var(--red-accent);
+            color: var(--bg-color);
         }
 
         .dashboard-container {
@@ -37,6 +65,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 24px;
+            margin-top: 40px; /* ボタン領域を避けるためのマージン */
         }
 
         .card {
@@ -155,6 +184,13 @@
             font-weight: 700;
             font-size: 0.85rem;
         }
+        /* 注視（赤文字設定時）の動的時間ラベルスタイル */
+        .timeline-label.focused-label {
+            color: var(--red-accent) !important;
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-shadow: 0 0 8px rgba(242, 92, 92, 0.4);
+        }
 
         .schedule-node {
             position: absolute;
@@ -212,6 +248,30 @@
             background-color: var(--card-bg);
         }
         
+        /* 注目ターゲットに設定された要素の赤文字強調デザイン */
+        .schedule-node.focused-node .node-text:not(.completed) {
+            color: var(--red-accent) !important;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(242, 92, 92, 0.4);
+        }
+
+        /* 注視切り替え用アイコンスタイル */
+        .node-focus-btn {
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-right: 6px;
+            opacity: 0.4;
+            transition: opacity 0.2s, transform 0.2s;
+            transform: translateZ(5px);
+        }
+        .node-focus-btn:hover {
+            opacity: 0.8;
+            transform: scale(1.1) translateZ(5px);
+        }
+        .schedule-node.focused-node .node-focus-btn {
+            opacity: 1;
+        }
+
         /* 編集用インライン入力フォーム */
         .edit-input-text {
             background-color: var(--card-bg) !important;
@@ -269,6 +329,10 @@
         .schedule-node.imminent .node-time-tag {
             color: var(--red-accent);
             animation: pulse 1.5s infinite;
+        }
+        /* 注視対象の時間タグも赤文字化 */
+        .schedule-node.focused-node .node-time-tag {
+            color: var(--red-accent) !important;
         }
 
         @keyframes pulse {
@@ -533,6 +597,11 @@
 </head>
 <body>
 
+    <!-- 画面右上のアラート一括クリアエリア -->
+    <div class="global-controls">
+        <button class="clear-btn" id="clearFocusBtn" title="すべての赤文字強調を解除します">Clear Highlights</button>
+    </div>
+
     <div class="dashboard-container">
         
         <div class="card left-side">
@@ -562,7 +631,7 @@
             
             <div class="display-container">
                 <div class="value money" id="moneyEarned">0.000</div>
-                <div class="unit">JP</div>
+                <div class="unit">JPY</div>
             </div>
 
             <div class="card-title">Rewards Meter</div>
@@ -590,6 +659,7 @@
         const progressFill = document.getElementById('progressFill');
         const timelineContainer = document.getElementById('timelineContainer');
         const currentTimeLine = document.getElementById('currentTimeLine');
+        const clearFocusBtn = document.getElementById('clearFocusBtn');
         
         const newPlanTime = document.getElementById('newPlanTime');
         const newPlanText = document.getElementById('newPlanText');
@@ -607,38 +677,45 @@
         const TOTAL_MINS = END_MINS - START_MINS; 
 
         // 背景グリッド生成
-        for (let h = 9; h <= 24; h++) {
-            const currentMins = h * 60;
-            const percent = ((currentMins - START_MINS) / TOTAL_MINS) * 100;
+        function renderBaseTimeline() {
+            // 一度既存のラベルと線をクリア（動的ラベル追加時に干渉しないように）
+            const fixedLines = timelineContainer.querySelectorAll('.timeline-grid-line, .timeline-label:not(.focused-label)');
+            fixedLines.forEach(el => el.remove());
 
-            const label = document.createElement('div');
-            label.className = 'timeline-label';
-            label.id = `label-hour-${h}`;
-            label.style.top = `${percent}%`;
-            label.textContent = `${String(h).padStart(2, '0')}:00`;
-            timelineContainer.appendChild(label);
+            for (let h = 9; h <= 24; h++) {
+                const currentMins = h * 60;
+                const percent = ((currentMins - START_MINS) / TOTAL_MINS) * 100;
 
-            const line = document.createElement('div');
-            line.className = 'timeline-grid-line';
-            line.style.top = `${percent}%`;
-            
-            if (h >= 13 && h <= 22) {
-                line.classList.add('active-zone');
+                const label = document.createElement('div');
+                label.className = 'timeline-label';
+                label.id = `label-hour-${h}`;
+                label.style.top = `${percent}%`;
+                label.textContent = `${String(h).padStart(2, '0')}:00`;
+                timelineContainer.appendChild(label);
+
+                const line = document.createElement('div');
+                line.className = 'timeline-grid-line';
+                line.style.top = `${percent}%`;
+                
+                if (h >= 13 && h <= 22) {
+                    line.classList.add('active-zone');
+                }
+                timelineContainer.appendChild(line);
             }
-            timelineContainer.appendChild(line);
         }
 
         // --- スケジュールデータ管理 ---
         const defaultPlans = [
-            { time: '13:00', text: '業務開始 / メールチェック', completed: false },
-            { time: '15:00', text: '定例ミーティング', completed: false },
-            { time: '18:00', text: '夕休憩', completed: false }
+            { time: '13:00', text: '業務開始 / メールチェック', completed: false, focused: false },
+            { time: '15:00', text: '定例ミーティング', completed: false, focused: false },
+            { time: '18:00', text: '夕休憩', completed: false, focused: false }
         ];
         let todayPlans = JSON.parse(localStorage.getItem('todayPlans')) || defaultPlans;
 
-        // 古いデータへの対応（completedプロパティがない場合）
+        // データ互換性チェック
         todayPlans.forEach(plan => {
             if (typeof plan.completed === 'undefined') plan.completed = false;
+            if (typeof plan.focused === 'undefined') plan.focused = false;
         });
 
         // --- メーターデータ管理 ---
@@ -660,20 +737,35 @@
         }
 
         function renderSchedule() {
-            const oldNodes = timelineContainer.querySelectorAll('.schedule-node');
+            // ベースラインの再描画
+            renderBaseTimeline();
+
+            // 既存のスケジュールノードおよび動的追加されたfocused-labelを削除
+            const oldNodes = timelineContainer.querySelectorAll('.schedule-node, .focused-label');
             oldNodes.forEach(node => node.remove());
 
             todayPlans.sort((a, b) => a.time.localeCompare(b.time));
 
             todayPlans.forEach((plan, index) => {
                 const percent = getTimePercentage(plan.time);
+                
+                // 1. もし注視対象(focused)であれば、該当する時間軸に臨時の赤文字ラベルを配置
+                if (plan.focused && !plan.completed) {
+                    const focusLabel = document.createElement('div');
+                    focusLabel.className = 'timeline-label focused-label';
+                    focusLabel.style.top = `${percent}%`;
+                    focusLabel.textContent = plan.time;
+                    timelineContainer.appendChild(focusLabel);
+                }
+
+                // 2. スケジュールコンテナノードの構築
                 const node = document.createElement('div');
                 node.className = 'schedule-node';
+                if (plan.focused && !plan.completed) node.classList.add('focused-node');
                 node.id = `plan-node-${index}`;
                 node.dataset.time = plan.time;
                 node.style.top = `${percent}%`;
                 
-                // チェック状態のクラス付与
                 const checkClass = plan.completed ? 'checked' : '';
                 const textClass = plan.completed ? 'completed' : '';
                 const checkIcon = plan.completed ? '✔' : '○';
@@ -684,6 +776,7 @@
                         <div class="node-text ${textClass}" onclick="startEdit(${index}, 'text')" title="クリックして編集">${plan.text}</div>
                     </div>
                     <div style="display: flex; align-items: center;">
+                        <div class="node-focus-btn" onclick="toggleFocus(${index})" title="重要項目として赤文字強調します">📌</div>
                         <div class="node-time-tag" onclick="startEdit(${index}, 'time')" title="クリックして時間変更">🕒</div>
                         <button class="node-delete-btn" onclick="deletePlan(${index})">✕</button>
                     </div>
@@ -701,6 +794,18 @@
             renderSchedule();
         };
 
+        // 注目・注視状態(赤文字強調)のトグル機能
+        window.toggleFocus = function(index) {
+            todayPlans[index].focused = !todayPlans[index].focused;
+            renderSchedule();
+        };
+
+        // 全赤文字強調の一括クリア機能（画面右上ボタン）
+        clearFocusBtn.addEventListener('click', () => {
+            todayPlans.forEach(plan => plan.focused = false);
+            renderSchedule();
+        });
+
         window.startEdit = function(index, type) {
             const node = document.getElementById(`plan-node-${index}`);
             if (type === 'text') {
@@ -716,7 +821,6 @@
                 const timeEl = node.querySelector('.node-time-tag');
                 const currentTime = todayPlans[index].time;
                 timeEl.removeAttribute('onclick');
-                // アイコンを一時的にインプットフィールドに置き換える
                 timeEl.innerHTML = `<input type="time" class="edit-input-time" value="${currentTime}">`;
                 const input = timeEl.querySelector('input');
                 input.focus();
@@ -738,7 +842,7 @@
             const time = newPlanTime.value;
             const text = newPlanText.value.trim();
             if (text === '') return;
-            todayPlans.push({ time: time, text: text, completed: false });
+            todayPlans.push({ time: time, text: text, completed: false, focused: false });
             newPlanText.value = '';
             renderSchedule();
         });
@@ -883,7 +987,7 @@
             const currentHour = now.getHours();
             const currentMins = currentHour * 60 + now.getMinutes();
             
-            const allLabels = timelineContainer.querySelectorAll('.timeline-label');
+            const allLabels = timelineContainer.querySelectorAll('.timeline-label:not(.focused-label)');
             allLabels.forEach(lbl => lbl.classList.remove('highlight-label'));
 
             if (currentMins >= START_MINS && currentMins <= END_MINS) {
