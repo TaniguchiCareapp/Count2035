@@ -31,30 +31,16 @@
             position: relative;
         }
 
-        /* 画面右上用コントロールエリア */
-        .global-controls {
+        /* 画面左上用 日付・曜日表示エリア */
+        .header-date {
             position: absolute;
             top: 24px;
-            right: 24px;
+            left: 24px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
             z-index: 100;
-        }
-
-        .clear-btn {
-            background-color: rgba(242, 92, 92, 0.1);
-            border: 1px solid rgba(242, 92, 92, 0.3);
-            color: var(--red-accent);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-transform: uppercase;
             letter-spacing: 0.05em;
-        }
-        .clear-btn:hover {
-            background-color: var(--red-accent);
-            color: var(--bg-color);
         }
 
         .dashboard-container {
@@ -65,7 +51,7 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 24px;
-            margin-top: 40px; /* ボタン領域を避けるためのマージン */
+            margin-top: 40px;
         }
 
         .card {
@@ -268,7 +254,8 @@
             opacity: 0.8;
             transform: scale(1.1) translateZ(5px);
         }
-        .schedule-node.focused-node .node-focus-btn {
+        .schedule-node.focused-node .node-focus-btn,
+        .meter-row.focused-reward .node-focus-btn {
             opacity: 1;
         }
 
@@ -300,15 +287,15 @@
             padding: 1px 4px;
             font-family: inherit;
         }
-        .edit-input-reward-price {
+        .edit-input-reward-date {
             background-color: var(--card-bg) !important;
             border: 1px solid var(--green-accent);
             color: var(--green-accent);
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             border-radius: 4px;
-            padding: 2px 6px;
-            width: 90px;
-            text-align: right;
+            padding: 2px 4px;
+            width: 100px;
+            font-family: inherit;
         }
 
         .node-time-tag {
@@ -370,7 +357,8 @@
             box-sizing: border-box;
         }
 
-        input[type="time"].form-time {
+        input[type="time"].form-time,
+        input[type="date"].form-date {
             padding: 8px;
             font-size: 0.85rem;
             border-radius: 8px;
@@ -378,6 +366,11 @@
             background-color: rgba(255, 255, 255, 0.03);
             color: var(--text-primary);
             font-family: inherit;
+        }
+        
+        input[type="date"].form-date {
+            width: 115px;
+            color: var(--green-accent);
         }
 
         input[type="text"].form-text {
@@ -388,17 +381,6 @@
             border: 1px solid var(--border-color);
             background-color: rgba(255, 255, 255, 0.03);
             color: var(--text-primary);
-        }
-
-        input[type="number"].form-number {
-            width: 80px;
-            padding: 8px 10px;
-            font-size: 0.85rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            background-color: rgba(255, 255, 255, 0.03);
-            color: var(--green-accent);
-            text-align: right;
         }
 
         input:focus {
@@ -470,7 +452,6 @@
             box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.1);
         }
 
-        /* number入力フォームから上下矢印（スピンボタン）を完全に非表示 */
         input[type="number"] {
             -moz-appearance: textfield;
         }
@@ -480,7 +461,7 @@
             margin: 0;
         }
 
-        /* メーターリスト */
+        /* メーター（マンスリースケジュール）リスト */
         .meter-list {
             width: 100%;
             margin-top: 32px;
@@ -519,6 +500,7 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            transition: color 0.3s ease;
         }
 
         .reward-price-wrapper {
@@ -527,15 +509,24 @@
             gap: 4px;
         }
 
-        .reward-price {
+        .reward-date {
             font-variant-numeric: tabular-nums;
             font-weight: 600;
             color: var(--text-secondary);
             cursor: pointer;
+            transition: color 0.3s ease;
         }
 
-        .meter-row.achieved .reward-price {
+        .meter-row.achieved .reward-date {
             color: var(--green-accent);
+        }
+
+        /* マンスリースケジュールのフォーカス(赤文字)対応 */
+        .meter-row.focused-reward .reward-tag,
+        .meter-row.focused-reward .reward-date {
+            color: var(--red-accent) !important;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(242, 92, 92, 0.4);
         }
 
         .reward-delete-btn {
@@ -568,7 +559,7 @@
             z-index: 10;
             pointer-events: none;
             transform: translateZ(6px);
-            display: none; /* 初期状態は非表示 */
+            display: none;
         }
 
         .progress-track {
@@ -597,10 +588,8 @@
 </head>
 <body>
 
-    <!-- 画面右上のアラート一括クリアエリア -->
-    <div class="global-controls">
-        <button class="clear-btn" id="clearFocusBtn" title="すべての赤文字強調を解除します">Clear Highlights</button>
-    </div>
+    <!-- 画面左上の日付・曜日表示 -->
+    <div class="header-date" id="headerDateDisplay"></div>
 
     <div class="dashboard-container">
         
@@ -633,13 +622,13 @@
                 <div class="value money" id="moneyEarned">0.000</div>
             </div>
 
-            <div class="card-title">Phase METER</div>
+            <div class="card-title">MONTHLY SCHEDULE</div>
 
             <div class="meter-list" id="meterList"></div>
 
             <div class="reward-form">
                 <input type="text" id="newRewardText" class="form-text" placeholder="新しい目標を入力...">
-                <input type="number" id="newRewardPrice" class="form-number" placeholder="金額" min="0">
+                <input type="date" id="newRewardDate" class="form-date">
                 <button id="addRewardBtn" class="add-btn">追加</button>
             </div>
 
@@ -658,14 +647,14 @@
         const progressFill = document.getElementById('progressFill');
         const timelineContainer = document.getElementById('timelineContainer');
         const currentTimeLine = document.getElementById('currentTimeLine');
-        const clearFocusBtn = document.getElementById('clearFocusBtn');
+        const headerDateDisplay = document.getElementById('headerDateDisplay');
         
         const newPlanTime = document.getElementById('newPlanTime');
         const newPlanText = document.getElementById('newPlanText');
         const addPlanBtn = document.getElementById('addPlanBtn');
 
         const newRewardText = document.getElementById('newRewardText');
-        const newRewardPrice = document.getElementById('newRewardPrice');
+        const newRewardDate = document.getElementById('newRewardDate');
         const addRewardBtn = document.getElementById('addRewardBtn');
 
         const targetDate = new Date('2035-01-01T00:00:00').getTime();
@@ -675,9 +664,18 @@
         const END_MINS = 24 * 60;           
         const TOTAL_MINS = END_MINS - START_MINS; 
 
+        // 左上の日付・曜日更新用関数
+        function updateHeaderDate(now) {
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const year = now.getFullYear();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const dayStr = days[now.getDay()];
+            headerDateDisplay.textContent = `${year}年${month}月${date}日(${dayStr})`;
+        }
+
         // 背景グリッド生成
         function renderBaseTimeline() {
-            // 一度既存のラベルと線をクリア（動的ラベル追加時に干渉しないように）
             const fixedLines = timelineContainer.querySelectorAll('.timeline-grid-line, .timeline-label:not(.focused-label)');
             fixedLines.forEach(el => el.remove());
 
@@ -711,21 +709,28 @@
         ];
         let todayPlans = JSON.parse(localStorage.getItem('todayPlans')) || defaultPlans;
 
-        // データ互換性チェック
         todayPlans.forEach(plan => {
             if (typeof plan.completed === 'undefined') plan.completed = false;
             if (typeof plan.focused === 'undefined') plan.focused = false;
         });
 
-        // --- メーターデータ管理 ---
+        // --- マンスリースケジュールデータ管理 ---
+        const todayStrInit = new Date().toISOString().split('T')[0];
         const defaultRewards = [
-            { price: 150,  label: '☕️ 缶コーヒー' },
-            { price: 400,  label: '🥪 コンビニ軽食' },
-            { price: 1000, label: '🍛 しっかりランチ' },
-            { price: 1500, label: '🍰 ご褒美スイーツ' }
+            { date: todayStrInit, label: 'プロジェクトA締切', focused: false },
+            { date: todayStrInit, label: 'チームミーティング', focused: false }
         ];
+        
         let rewardItems = JSON.parse(localStorage.getItem('rewardItems')) || defaultRewards;
-        let MAX_GOAL = rewardItems.length > 0 ? rewardItems[rewardItems.length - 1].price : 1500;
+        
+        // 旧データ（金額ベース）からのマイグレーション
+        rewardItems.forEach(item => {
+            if (typeof item.focused === 'undefined') item.focused = false;
+            if (item.price !== undefined) {
+                item.date = todayStrInit;
+                delete item.price;
+            }
+        });
 
         function getTimePercentage(timeStr) {
             const [h, m] = timeStr.split(':').map(Number);
@@ -736,10 +741,8 @@
         }
 
         function renderSchedule() {
-            // ベースラインの再描画
             renderBaseTimeline();
 
-            // 既存のスケジュールノードおよび動的追加されたfocused-labelを削除
             const oldNodes = timelineContainer.querySelectorAll('.schedule-node, .focused-label');
             oldNodes.forEach(node => node.remove());
 
@@ -748,7 +751,6 @@
             todayPlans.forEach((plan, index) => {
                 const percent = getTimePercentage(plan.time);
                 
-                // 1. もし注視対象(focused)であれば、該当する時間軸に臨時の赤文字ラベルを配置
                 if (plan.focused && !plan.completed) {
                     const focusLabel = document.createElement('div');
                     focusLabel.className = 'timeline-label focused-label';
@@ -757,7 +759,6 @@
                     timelineContainer.appendChild(focusLabel);
                 }
 
-                // 2. スケジュールコンテナノードの構築
                 const node = document.createElement('div');
                 node.className = 'schedule-node';
                 if (plan.focused && !plan.completed) node.classList.add('focused-node');
@@ -787,23 +788,15 @@
             checkImminentPlans();
         }
 
-        // 完了状態のトグル機能
         window.togglePlan = function(index) {
             todayPlans[index].completed = !todayPlans[index].completed;
             renderSchedule();
         };
 
-        // 注目・注視状態(赤文字強調)のトグル機能
         window.toggleFocus = function(index) {
             todayPlans[index].focused = !todayPlans[index].focused;
             renderSchedule();
         };
-
-        // 全赤文字強調の一括クリア機能（画面右上ボタン）
-        clearFocusBtn.addEventListener('click', () => {
-            todayPlans.forEach(plan => plan.focused = false);
-            renderSchedule();
-        });
 
         window.startEdit = function(index, type) {
             const node = document.getElementById(`plan-node-${index}`);
@@ -851,22 +844,25 @@
             renderSchedule();
         };
 
+        // マンスリースケジュール（右側）の描画
         function renderRewards() {
             meterList.innerHTML = ''; 
-            rewardItems.sort((a, b) => a.price - b.price);
-            MAX_GOAL = rewardItems.length > 0 ? rewardItems[rewardItems.length - 1].price : 1500;
+            rewardItems.sort((a, b) => a.date.localeCompare(b.date));
 
             rewardItems.forEach((item, index) => {
                 const row = document.createElement('div');
                 row.id = `reward-row-${index}`;
                 row.className = 'meter-row';
+                if (item.focused) row.classList.add('focused-reward');
+                
                 row.innerHTML = `
                     <div class="reward-tag-container">
                         <span class="status-icon">⚪︎</span>
                         <span class="reward-tag" onclick="startRewardEdit(${index}, 'label')" title="クリックして変更">${item.label}</span>
                     </div>
                     <div class="reward-price-wrapper">
-                        <div class="reward-price" onclick="startRewardEdit(${index}, 'price')" title="クリックして金額を変更">${item.price.toLocaleString()}</div>
+                        <div class="node-focus-btn" onclick="toggleRewardFocus(${index})" title="重要項目として赤文字強調します">📌</div>
+                        <div class="reward-date" onclick="startRewardEdit(${index}, 'date')" title="クリックして日付を変更">${item.date}</div>
                         <button class="reward-delete-btn" onclick="deleteReward(${index})">✕</button>
                     </div>
                 `;
@@ -875,15 +871,20 @@
             localStorage.setItem('rewardItems', JSON.stringify(rewardItems));
         }
 
+        window.toggleRewardFocus = function(index) {
+            rewardItems[index].focused = !rewardItems[index].focused;
+            renderRewards();
+        };
+
         addRewardBtn.addEventListener('click', () => {
             const label = newRewardText.value.trim();
-            const price = parseInt(newRewardPrice.value, 10);
+            const dateStr = newRewardDate.value;
 
-            if (label === '' || isNaN(price) || price < 0) return;
+            if (label === '' || dateStr === '') return;
 
-            rewardItems.push({ price: price, label: label });
+            rewardItems.push({ date: dateStr, label: label, focused: false });
             newRewardText.value = '';
-            newRewardPrice.value = '';
+            newRewardDate.value = '';
             renderRewards();
         });
 
@@ -904,15 +905,15 @@
                 input.focus();
                 input.addEventListener('blur', () => saveRewardEdit(index, input.value, 'label'));
                 input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
-            } else if (type === 'price') {
-                const priceEl = row.querySelector('.reward-price');
-                const currentPrice = rewardItems[index].price;
-                priceEl.removeAttribute('onclick');
-                priceEl.innerHTML = `<input type="number" class="edit-input-reward-price" value="${currentPrice}" min="0">`;
+            } else if (type === 'date') {
+                const dateEl = row.querySelector('.reward-date');
+                const currentDate = rewardItems[index].date;
+                dateEl.removeAttribute('onclick');
+                dateEl.innerHTML = `<input type="date" class="edit-input-reward-date" value="${currentDate}">`;
                 
-                const input = priceEl.querySelector('input');
+                const input = dateEl.querySelector('input');
                 input.focus();
-                input.addEventListener('blur', () => saveRewardEdit(index, input.value, 'price'));
+                input.addEventListener('blur', () => saveRewardEdit(index, input.value, 'date'));
                 input.addEventListener('keydown', (e) => { if (e.key === 'Enter') input.blur(); });
             }
         };
@@ -923,9 +924,8 @@
                 if (type === 'label') {
                     rewardItems[index].label = cleanVal;
                 }
-                if (type === 'price') {
-                    const num = parseInt(cleanVal, 10);
-                    if (!isNaN(num) && num >= 0) rewardItems[index].price = num;
+                if (type === 'date') {
+                    rewardItems[index].date = cleanVal;
                 }
             }
             renderRewards();
@@ -1006,6 +1006,10 @@
 
         function updateScreen() {
             const nowMs = Date.now();
+            const now = new Date(nowMs);
+
+            // ヘッダーの日付更新
+            updateHeaderDate(now);
 
             // 1. カウントダウン
             const differenceMs = targetDate - nowMs;
@@ -1033,12 +1037,15 @@
                 parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                 moneyElement.textContent = parts.join('.');
 
-                // 3. メーター
+                // 3. マンスリースケジュールの達成状態（現在の日付が指定日を過ぎたかで判定）
+                const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+                
                 rewardItems.forEach((item, index) => {
                     const row = document.getElementById(`reward-row-${index}`);
                     if (!row) return;
                     const iconSpan = row.querySelector('.status-icon');
-                    if (earned >= item.price) {
+                    
+                    if (todayStr >= item.date) {
                         if (!row.classList.contains('achieved')) {
                             row.classList.add('achieved');
                             iconSpan.textContent = '⚫︎';
@@ -1051,7 +1058,8 @@
                     }
                 });
 
-                // 4. プログレスバー
+                // 4. プログレスバー (エラー防止のため稼いだ金額ベースの仮MAX_GOALで稼働を維持)
+                const MAX_GOAL = 1500;
                 const progressPercent = Math.min((earned / MAX_GOAL) * 100, 100);
                 progressFill.style.width = `${progressPercent}%`;
 
