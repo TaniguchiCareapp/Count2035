@@ -35,7 +35,7 @@
         /* 画面左上用 日付・曜日表示エリア */
         .header-date {
             position: absolute;
-            top: 105px;
+            top: 150px;
             left: 24px;
             font-size: 1.2rem;
             font-weight: 700;
@@ -745,6 +745,7 @@
         
         let rewardItems = JSON.parse(localStorage.getItem('rewardItems')) || defaultRewards;
         
+        // 古いデータ形式からマイグレーション（priceプロパティがある場合）
         rewardItems.forEach(item => {
             if (typeof item.focused === 'undefined') item.focused = false;
             if (item.price !== undefined) {
@@ -1129,13 +1130,20 @@
                     iconSpan.style.color = 'var(--text-secondary)';
                     
                     if (fill) {
+                        // 期限日と現在日時の差（日数）を計算
                         const diffMs = itemDate.getTime() - nowMs;
                         const diffDays = diffMs / (1000 * 60 * 60 * 24);
                         
-                        // 残り30日を100%（満タン）として計算。減るほどバーが短くなる
+                        // 残り30日以上を0%とし、期限（残り0日）に近づくほど100%に増える計算
                         const maxDays = 30;
-                        let percent = (diffDays / maxDays) * 100;
-                        percent = Math.max(0, Math.min(100, percent));
+                        let percent = 0;
+                        if (diffDays >= maxDays) {
+                            percent = 0;
+                        } else if (diffDays <= 0) {
+                            percent = 100;
+                        } else {
+                            percent = ((maxDays - diffDays) / maxDays) * 100;
+                        }
                         
                         // 残り日数によって色を変化
                         let color = 'var(--green-accent)';
