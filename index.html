@@ -13,6 +13,7 @@
             --text-secondary: #7e8494;
             --blue-accent: #4d82f3;
             --green-accent: #34d399;
+            --orange-accent: #fbbf24;
             --red-accent: #f25c5c;
             --progress-empty: #1e202c;
         }
@@ -34,7 +35,7 @@
         /* 画面左上用 日付・曜日表示エリア */
         .header-date {
             position: absolute;
-            top: 85px; /* 表示位置を下げるために24pxから変更 */
+            top: 105px;
             left: 24px;
             font-size: 1.2rem;
             font-weight: 700;
@@ -170,7 +171,6 @@
             font-weight: 700;
             font-size: 0.85rem;
         }
-        /* 注視（赤文字設定時）の動的時間ラベルスタイル */
         .timeline-label.focused-label {
             color: var(--red-accent) !important;
             font-weight: 700;
@@ -234,14 +234,12 @@
             background-color: var(--card-bg);
         }
         
-        /* 注目ターゲットに設定された要素の赤文字強調デザイン */
         .schedule-node.focused-node .node-text:not(.completed) {
             color: var(--red-accent) !important;
             font-weight: 700;
             text-shadow: 0 0 10px rgba(242, 92, 92, 0.4);
         }
 
-        /* 注視切り替え用アイコンスタイル */
         .node-focus-btn {
             font-size: 0.85rem;
             cursor: pointer;
@@ -259,7 +257,6 @@
             opacity: 1;
         }
 
-        /* 編集用インライン入力フォーム */
         .edit-input-text {
             background-color: var(--card-bg) !important;
             border: 1px solid var(--blue-accent);
@@ -317,7 +314,6 @@
             color: var(--red-accent);
             animation: pulse 1.5s infinite;
         }
-        /* 注視対象の時間タグも赤文字化 */
         .schedule-node.focused-node .node-time-tag {
             color: var(--red-accent) !important;
         }
@@ -346,7 +342,6 @@
             background-color: rgba(242, 92, 92, 0.1);
         }
 
-        /* スケジュール＆メーターの追加フォーム */
         .schedule-form, .reward-form {
             width: 100%;
             margin-top: 24px;
@@ -416,7 +411,6 @@
             color: var(--bg-color);
         }
 
-        /* 基準値入力欄のラッパー */
         .input-wrapper {
             display: flex;
             align-items: center;
@@ -473,6 +467,18 @@
             flex-grow: 1;
         }
 
+        /* 個別アイテムのコンテナ（プログレスバーを含む） */
+        .meter-row-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-bottom: 12px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+        }
+        .meter-row-container:last-child {
+            border-bottom: none;
+        }
+
         .meter-row {
             display: flex;
             justify-content: space-between;
@@ -521,7 +527,6 @@
             color: var(--green-accent);
         }
 
-        /* マンスリースケジュールのフォーカス(赤文字)対応 */
         .meter-row.focused-reward .reward-tag,
         .meter-row.focused-reward .reward-date {
             color: var(--red-accent) !important;
@@ -548,7 +553,22 @@
             background-color: rgba(242, 92, 92, 0.1);
         }
 
-        /* タイムラインの現在時刻線スタイル */
+        /* 各アイテム用のプログレスバー */
+        .item-progress-track {
+            width: 100%;
+            height: 4px;
+            background-color: var(--progress-empty);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .item-progress-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 2px;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+
         .current-time-line {
             position: absolute;
             left: 55px;
@@ -562,6 +582,7 @@
             display: none;
         }
 
+        /* 右下全体のプログレスバー（稼働額ベース） */
         .progress-track {
             width: 100%;
             height: 4px;
@@ -632,6 +653,7 @@
                 <button id="addRewardBtn" class="add-btn">追加</button>
             </div>
 
+            <!-- 全体の稼働額プログレスバー -->
             <div class="progress-track">
                 <div class="progress-fill" id="progressFill"></div>
             </div>
@@ -723,7 +745,6 @@
         
         let rewardItems = JSON.parse(localStorage.getItem('rewardItems')) || defaultRewards;
         
-        // 旧データ（金額ベース）からのマイグレーション
         rewardItems.forEach(item => {
             if (typeof item.focused === 'undefined') item.focused = false;
             if (item.price !== undefined) {
@@ -847,9 +868,28 @@
         // マンスリースケジュール（右側）の描画
         function renderRewards() {
             meterList.innerHTML = ''; 
-            rewardItems.sort((a, b) => a.date.localeCompare(b.date));
+            
+            // 当日の日付文字列生成 (ソート基準用)
+            const d = new Date();
+            const localTodayStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+
+            // 期限が迫っている（今日以降で日付が近い）ものほど上にするソート
+            rewardItems.sort((a, b) => {
+                const aIsPast = a.date < localTodayStr;
+                const bIsPast = b.date < localTodayStr;
+
+                if (aIsPast && !bIsPast) return 1;  // 過去のものは下へ
+                if (!aIsPast && bIsPast) return -1; // 未来・今日のものは上へ
+
+                // どちらも未来、またはどちらも過去の場合は日付の昇順（近いものほど上）
+                return a.date.localeCompare(b.date);
+            });
 
             rewardItems.forEach((item, index) => {
+                const container = document.createElement('div');
+                container.className = 'meter-row-container';
+                container.id = `reward-container-${index}`;
+
                 const row = document.createElement('div');
                 row.id = `reward-row-${index}`;
                 row.className = 'meter-row';
@@ -866,7 +906,17 @@
                         <button class="reward-delete-btn" onclick="deleteReward(${index})">✕</button>
                     </div>
                 `;
-                meterList.appendChild(row);
+
+                // 個別のプログレスバー追加
+                const progressTrack = document.createElement('div');
+                progressTrack.id = `reward-progress-${index}`;
+                progressTrack.className = 'item-progress-track';
+                progressTrack.innerHTML = `<div id="reward-fill-${index}" class="item-progress-fill"></div>`;
+
+                container.appendChild(row);
+                container.appendChild(progressTrack);
+
+                meterList.appendChild(container);
             });
             localStorage.setItem('rewardItems', JSON.stringify(rewardItems));
         }
@@ -885,7 +935,7 @@
             rewardItems.push({ date: dateStr, label: label, focused: false });
             newRewardText.value = '';
             newRewardDate.value = '';
-            renderRewards();
+            renderRewards(); // 追加時に自動的に再ソートされます
         });
 
         window.deleteReward = function(index) {
@@ -1037,28 +1087,7 @@
                 parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                 moneyElement.textContent = parts.join('.');
 
-                // 3. マンスリースケジュールの達成状態（現在の日付が指定日を過ぎたかで判定）
-                const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
-                
-                rewardItems.forEach((item, index) => {
-                    const row = document.getElementById(`reward-row-${index}`);
-                    if (!row) return;
-                    const iconSpan = row.querySelector('.status-icon');
-                    
-                    if (todayStr >= item.date) {
-                        if (!row.classList.contains('achieved')) {
-                            row.classList.add('achieved');
-                            iconSpan.textContent = '⚫︎';
-                            iconSpan.style.color = 'var(--green-accent)';
-                        }
-                    } else {
-                        row.classList.remove('achieved');
-                        iconSpan.textContent = '⚪︎';
-                        iconSpan.style.color = 'var(--text-secondary)';
-                    }
-                });
-
-                // 4. プログレスバー (エラー防止のため稼いだ金額ベースの仮MAX_GOALで稼働を維持)
+                // 4. プログレスバー (全体の稼働額ベース)
                 const MAX_GOAL = 1500;
                 const progressPercent = Math.min((earned / MAX_GOAL) * 100, 100);
                 progressFill.style.width = `${progressPercent}%`;
@@ -1066,13 +1095,63 @@
             } else {
                 moneyElement.textContent = "0.000";
                 progressFill.style.width = "0%";
-                rewardItems.forEach((item, index) => {
-                    const row = document.getElementById(`reward-row-${index}`);
-                    if (!row) return;
-                    row.classList.remove('achieved');
-                    row.querySelector('.status-icon').textContent = '⚪︎';
-                });
             }
+
+            // 3. マンスリースケジュールの達成状態とプログレスバーの更新
+            const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
+            
+            rewardItems.forEach((item, index) => {
+                const row = document.getElementById(`reward-row-${index}`);
+                if (!row) return;
+                const iconSpan = row.querySelector('.status-icon');
+                
+                const fill = document.getElementById(`reward-fill-${index}`);
+
+                // 期限日の23:59:59までを期限とする
+                const itemDate = new Date(item.date);
+                itemDate.setHours(23, 59, 59, 999);
+                
+                if (todayStr > item.date) {
+                    // 期限切れ・過去のもの（達成）
+                    if (!row.classList.contains('achieved')) {
+                        row.classList.add('achieved');
+                        iconSpan.textContent = '⚫︎';
+                        iconSpan.style.color = 'var(--green-accent)';
+                    }
+                    if (fill) {
+                        fill.style.width = '100%';
+                        fill.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; // 目立たないグレー色で満たす
+                    }
+                } else {
+                    // 今日以降・未達成のもの
+                    row.classList.remove('achieved');
+                    iconSpan.textContent = '⚪︎';
+                    iconSpan.style.color = 'var(--text-secondary)';
+                    
+                    if (fill) {
+                        const diffMs = itemDate.getTime() - nowMs;
+                        const diffDays = diffMs / (1000 * 60 * 60 * 24);
+                        
+                        // 残り30日を100%（満タン）として計算。減るほどバーが短くなる
+                        const maxDays = 30;
+                        let percent = (diffDays / maxDays) * 100;
+                        percent = Math.max(0, Math.min(100, percent));
+                        
+                        // 残り日数によって色を変化
+                        let color = 'var(--green-accent)';
+                        if (diffDays <= 3) {
+                            color = 'var(--red-accent)';
+                        } else if (diffDays <= 7) {
+                            color = 'var(--orange-accent)';
+                        } else if (diffDays <= 14) {
+                            color = 'var(--blue-accent)';
+                        }
+                        
+                        fill.style.width = `${percent}%`;
+                        fill.style.backgroundColor = color;
+                    }
+                }
+            });
 
             updateTimeLine(nowMs);
             checkImminentPlans();
