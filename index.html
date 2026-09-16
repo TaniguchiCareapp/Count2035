@@ -34,8 +34,8 @@
 
         /* 画面左上用 日付・曜日表示エリア */
         .header-date {
-            position: fixed; /* スクロールしても定位置に固定するため fixed に変更 */
-            top: 85px;
+            position: fixed;
+            top: 55px;
             left: 24px;
             font-size: 1.2rem;
             font-weight: 700;
@@ -252,8 +252,7 @@
             opacity: 0.8;
             transform: scale(1.1) translateZ(5px);
         }
-        .schedule-node.focused-node .node-focus-btn,
-        .meter-row.focused-reward .node-focus-btn {
+        .schedule-node.focused-node .node-focus-btn {
             opacity: 1;
         }
 
@@ -410,6 +409,26 @@
             background-color: var(--green-accent);
             color: var(--bg-color);
         }
+        
+        /* チェックリセットボタン */
+        .reset-btn {
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 16px;
+            align-self: flex-start; /* 左寄せ */
+        }
+        .reset-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+            background-color: rgba(255, 255, 255, 0.1);
+        }
 
         .input-wrapper {
             display: flex;
@@ -509,6 +528,13 @@
             transition: color 0.3s ease;
         }
 
+        /* マンスリースケジュールの5日以内自動赤文字化 */
+        .reward-tag.imminent {
+            color: var(--red-accent) !important;
+            font-weight: 700;
+            text-shadow: 0 0 10px rgba(242, 92, 92, 0.4);
+        }
+
         .reward-price-wrapper {
             display: flex;
             align-items: center;
@@ -525,13 +551,6 @@
 
         .meter-row.achieved .reward-date {
             color: var(--green-accent);
-        }
-
-        .meter-row.focused-reward .reward-tag,
-        .meter-row.focused-reward .reward-date {
-            color: var(--red-accent) !important;
-            font-weight: 700;
-            text-shadow: 0 0 10px rgba(242, 92, 92, 0.4);
         }
 
         .reward-delete-btn {
@@ -631,6 +650,9 @@
                 <input type="text" id="newPlanText" class="form-text" placeholder="新しい予定を入力...">
                 <button id="addPlanBtn" class="add-btn">追加</button>
             </div>
+            
+            <!-- チェックリセットボタン追加 -->
+            <button id="resetCheckBtn" class="reset-btn">チェックリセット</button>
         </div>
 
         <div class="card right-side">
@@ -674,6 +696,7 @@
         const newPlanTime = document.getElementById('newPlanTime');
         const newPlanText = document.getElementById('newPlanText');
         const addPlanBtn = document.getElementById('addPlanBtn');
+        const resetCheckBtn = document.getElementById('resetCheckBtn'); // 追加
 
         const newRewardText = document.getElementById('newRewardText');
         const newRewardDate = document.getElementById('newRewardDate');
@@ -739,15 +762,14 @@
         // --- マンスリースケジュールデータ管理 ---
         const todayStrInit = new Date().toISOString().split('T')[0];
         const defaultRewards = [
-            { date: todayStrInit, label: 'プロジェクトA締切', focused: false },
-            { date: todayStrInit, label: 'チームミーティング', focused: false }
+            { date: todayStrInit, label: 'プロジェクトA締切' },
+            { date: todayStrInit, label: 'チームミーティング' }
         ];
         
         let rewardItems = JSON.parse(localStorage.getItem('rewardItems')) || defaultRewards;
         
-        // 古いデータ形式からマイグレーション（priceプロパティがある場合）
+        // 古いデータ形式からマイグレーション
         rewardItems.forEach(item => {
-            if (typeof item.focused === 'undefined') item.focused = false;
             if (item.price !== undefined) {
                 item.date = todayStrInit;
                 delete item.price;
@@ -819,6 +841,12 @@
             todayPlans[index].focused = !todayPlans[index].focused;
             renderSchedule();
         };
+
+        // チェックリセットボタンの処理
+        resetCheckBtn.addEventListener('click', () => {
+            todayPlans.forEach(plan => plan.completed = false);
+            renderSchedule();
+        });
 
         window.startEdit = function(index, type) {
             const node = document.getElementById(`plan-node-${index}`);
@@ -894,7 +922,6 @@
                 const row = document.createElement('div');
                 row.id = `reward-row-${index}`;
                 row.className = 'meter-row';
-                if (item.focused) row.classList.add('focused-reward');
                 
                 row.innerHTML = `
                     <div class="reward-tag-container">
@@ -902,7 +929,6 @@
                         <span class="reward-tag" onclick="startRewardEdit(${index}, 'label')" title="クリックして変更">${item.label}</span>
                     </div>
                     <div class="reward-price-wrapper">
-                        <div class="node-focus-btn" onclick="toggleRewardFocus(${index})" title="重要項目として赤文字強調します">📌</div>
                         <div class="reward-date" onclick="startRewardEdit(${index}, 'date')" title="クリックして日付を変更">${item.date}</div>
                         <button class="reward-delete-btn" onclick="deleteReward(${index})">✕</button>
                     </div>
@@ -922,18 +948,13 @@
             localStorage.setItem('rewardItems', JSON.stringify(rewardItems));
         }
 
-        window.toggleRewardFocus = function(index) {
-            rewardItems[index].focused = !rewardItems[index].focused;
-            renderRewards();
-        };
-
         addRewardBtn.addEventListener('click', () => {
             const label = newRewardText.value.trim();
             const dateStr = newRewardDate.value;
 
             if (label === '' || dateStr === '') return;
 
-            rewardItems.push({ date: dateStr, label: label, focused: false });
+            rewardItems.push({ date: dateStr, label: label });
             newRewardText.value = '';
             newRewardDate.value = '';
             renderRewards(); // 追加時に自動的に再ソートされます
@@ -1105,7 +1126,7 @@
                 const row = document.getElementById(`reward-row-${index}`);
                 if (!row) return;
                 const iconSpan = row.querySelector('.status-icon');
-                
+                const tagEl = row.querySelector('.reward-tag');
                 const fill = document.getElementById(`reward-fill-${index}`);
 
                 // 期限日の23:59:59までを期限とする
@@ -1118,6 +1139,9 @@
                         row.classList.add('achieved');
                         iconSpan.textContent = '⚫︎';
                         iconSpan.style.color = 'var(--green-accent)';
+                    }
+                    if (tagEl) {
+                        tagEl.classList.remove('imminent');
                     }
                     if (fill) {
                         fill.style.width = '100%';
@@ -1134,6 +1158,15 @@
                         const diffMs = itemDate.getTime() - nowMs;
                         const diffDays = diffMs / (1000 * 60 * 60 * 24);
                         
+                        // 5日以内の自動赤文字化
+                        if (tagEl) {
+                            if (diffDays <= 5) {
+                                tagEl.classList.add('imminent');
+                            } else {
+                                tagEl.classList.remove('imminent');
+                            }
+                        }
+
                         // 残り30日以上を0%とし、期限（残り0日）に近づくほど100%に増える計算
                         const maxDays = 30;
                         let percent = 0;
