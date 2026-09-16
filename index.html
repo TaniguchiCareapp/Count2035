@@ -35,13 +35,37 @@
         /* 画面左上用 日付・曜日表示エリア */
         .header-date {
             position: fixed;
-            top: 55px;
-            left: 24px;
+            /* 👇 日付の表示位置を微調整する場合は、ここから下の2行の数値を変更してください 👇 */
+            top: 40px;   /* 縦の位置 */
+            left: 24px;  /* 横の位置 */
+            /* 👆 ---------------------------------------------------------------------- 👆 */
             font-size: 1.2rem;
             font-weight: 700;
             color: var(--text-primary);
             z-index: 100;
             letter-spacing: 0.05em;
+        }
+
+        /* チェックリセットボタン（画面左側に固定表示） */
+        .reset-btn {
+            position: fixed;
+            top: 130px; /* 日付の下に配置されるように設定 */
+            left: 24px;
+            background-color: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+        .reset-btn:hover {
+            color: var(--text-primary);
+            border-color: var(--text-secondary);
+            background-color: rgba(255, 255, 255, 0.1);
         }
 
         .dashboard-container {
@@ -409,26 +433,6 @@
             background-color: var(--green-accent);
             color: var(--bg-color);
         }
-        
-        /* チェックリセットボタン */
-        .reset-btn {
-            background-color: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-top: 16px;
-            align-self: flex-start; /* 左寄せ */
-        }
-        .reset-btn:hover {
-            color: var(--text-primary);
-            border-color: var(--text-secondary);
-            background-color: rgba(255, 255, 255, 0.1);
-        }
 
         .input-wrapper {
             display: flex;
@@ -630,6 +634,9 @@
 
     <!-- 画面左上の日付・曜日表示 -->
     <div class="header-date" id="headerDateDisplay"></div>
+    
+    <!-- パネル外・左側に配置するチェックリセットボタン -->
+    <button id="resetCheckBtn" class="reset-btn">チェックリセット</button>
 
     <div class="dashboard-container">
         
@@ -650,9 +657,6 @@
                 <input type="text" id="newPlanText" class="form-text" placeholder="新しい予定を入力...">
                 <button id="addPlanBtn" class="add-btn">追加</button>
             </div>
-            
-            <!-- チェックリセットボタン追加 -->
-            <button id="resetCheckBtn" class="reset-btn">チェックリセット</button>
         </div>
 
         <div class="card right-side">
@@ -696,7 +700,7 @@
         const newPlanTime = document.getElementById('newPlanTime');
         const newPlanText = document.getElementById('newPlanText');
         const addPlanBtn = document.getElementById('addPlanBtn');
-        const resetCheckBtn = document.getElementById('resetCheckBtn'); // 追加
+        const resetCheckBtn = document.getElementById('resetCheckBtn');
 
         const newRewardText = document.getElementById('newRewardText');
         const newRewardDate = document.getElementById('newRewardDate');
