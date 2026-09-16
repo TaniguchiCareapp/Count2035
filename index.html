@@ -35,10 +35,10 @@
         /* 画面左上用 日付・曜日表示エリア */
         .header-date {
             position: fixed;
-            /* 👇 日付の表示位置を微調整する場合は、ここから下の2行の数値を変更してください 👇 */
+            /* 👇 表示位置を微調整する場合は数値を変更してください 👇 */
             top: 40px;   /* 縦の位置 */
             left: 24px;  /* 横の位置 */
-            /* 👆 ---------------------------------------------------------------------- 👆 */
+            /* 👆 ------------------------------------------ 👆 */
             font-size: 1.2rem;
             font-weight: 700;
             color: var(--text-primary);
@@ -46,11 +46,25 @@
             letter-spacing: 0.05em;
         }
 
+        /* 画面左側用 カウント表示エリア */
+        .fixed-countdown-container {
+            position: fixed;
+            /* 👇 表示位置を微調整する場合は数値を変更してください 👇 */
+            top: 85px;   /* 縦の位置（日付の下） */
+            left: 24px;  /* 横の位置 */
+            /* 👆 ------------------------------------------ 👆 */
+            display: flex;
+            align-items: baseline;
+            z-index: 100;
+        }
+
         /* チェックリセットボタン（画面左側に固定表示） */
         .reset-btn {
             position: fixed;
-            top: 130px; /* 日付の下に配置されるように設定 */
-            left: 24px;
+            /* 👇 表示位置を微調整する場合は数値を変更してください 👇 */
+            top: 155px;  /* 縦の位置（カウント表示の下） */
+            left: 24px;  /* 横の位置 */
+            /* 👆 ------------------------------------------ 👆 */
             background-color: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
             color: var(--text-secondary);
@@ -635,17 +649,18 @@
     <!-- 画面左上の日付・曜日表示 -->
     <div class="header-date" id="headerDateDisplay"></div>
     
+    <!-- 画面左側の固定カウント表示 -->
+    <div class="fixed-countdown-container">
+        <div class="value time" id="countdown"></div>
+        <div class="unit">SEC</div>
+    </div>
+
     <!-- パネル外・左側に配置するチェックリセットボタン -->
     <button id="resetCheckBtn" class="reset-btn">チェックリセット</button>
 
     <div class="dashboard-container">
         
         <div class="card left-side">
-            <div class="display-container">
-                <div class="value time" id="countdown"></div>
-                <div class="unit">SEC</div>
-            </div>
-
             <div class="card-title">Today's Schedule</div>
             
             <div class="timeline-container" id="timelineContainer">
