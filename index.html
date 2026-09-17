@@ -35,10 +35,8 @@
         /* 画面左上用 日付・曜日表示エリア */
         .header-date {
             position: fixed;
-            /* 👇 表示位置を微調整する場合は数値を変更してください 👇 */
-            top: 40px;   /* 縦の位置 */
-            left: 24px;  /* 横の位置 */
-            /* 👆 ------------------------------------------ 👆 */
+            top: 40px;   
+            left: 24px;  
             font-size: 1.2rem;
             font-weight: 700;
             color: var(--text-primary);
@@ -49,10 +47,8 @@
         /* 画面左側用 カウント表示エリア */
         .fixed-countdown-container {
             position: fixed;
-            /* 👇 表示位置を微調整する場合は数値を変更してください 👇 */
-            top: 85px;   /* 縦の位置（日付の下） */
-            left: 24px;  /* 横の位置 */
-            /* 👆 ------------------------------------------ 👆 */
+            top: 85px;   
+            left: 24px;  
             display: flex;
             align-items: baseline;
             z-index: 100;
@@ -61,10 +57,8 @@
         /* チェックリセットボタン（画面左側に固定表示） */
         .reset-btn {
             position: fixed;
-            /* 👇 表示位置を微調整する場合は数値を変更してください 👇 */
-            top: 155px;  /* 縦の位置（カウント表示の下） */
-            left: 24px;  /* 横の位置 */
-            /* 👆 ------------------------------------------ 👆 */
+            top: 155px;  
+            left: 24px;  
             background-color: rgba(255, 255, 255, 0.03);
             border: 1px solid var(--border-color);
             color: var(--text-secondary);
@@ -91,17 +85,16 @@
             grid-template-columns: 1fr 1fr;
             gap: 24px;
             margin-top: 40px;
-            /* 👇 パネル全体の位置を右に寄せるための設定 👇 */
             position: relative;
-            left: 150px; /* 数値を大きくするとパネル全体が右へ、マイナスにすると左へ移動します */
-            /* 👆 --------------------------------------- 👆 */
+            left: 150px; 
         }
 
         .card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 20px;
-            padding: 32px 24px;
+            /* 👇 スペース削減のためパディングを調整 */
+            padding: 24px; 
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             display: flex;
             flex-direction: column;
@@ -137,7 +130,8 @@
             align-items: baseline;
             justify-content: center;
             width: 100%;
-            margin-bottom: 24px;
+            /* 👇 スペース削減のためマージンを調整 */
+            margin-bottom: 16px;
         }
 
         .value {
@@ -172,18 +166,20 @@
             font-weight: 700;
             color: var(--text-secondary);
             letter-spacing: 0.08em;
-            margin-bottom: 20px;
+            /* 👇 スペース削減のためマージンを調整 */
+            margin-bottom: 12px;
             text-transform: uppercase;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            padding-bottom: 10px;
+            padding-bottom: 8px;
         }
 
         /* タイムラインの3Dレイヤー化 */
         .timeline-container {
             width: 100%;
-            height: 500px;
+            /* 👇 余白を削った分、高さを広げました */
+            height: 520px;
             position: relative;
-            margin: 10px 0;
+            margin: 5px 0;
             transform-style: preserve-3d;
         }
 
@@ -385,13 +381,61 @@
 
         .schedule-form, .reward-form {
             width: 100%;
-            margin-top: 24px;
-            padding-top: 20px;
+            /* 👇 余白を詰めました */
+            margin-top: 16px;
+            padding-top: 16px;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             gap: 8px;
             box-sizing: border-box;
         }
+
+        /* 👇 次回出勤日用のスタイル */
+        .next-workday-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.05);
+        }
+
+        .next-workday-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        .next-workday-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .next-workday-display {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--blue-accent);
+            background-color: rgba(255, 255, 255, 0.03);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+            text-align: center;
+            z-index: 1;
+            min-width: 100px;
+        }
+
+        .next-workday-input:hover + .next-workday-display {
+            border-color: var(--blue-accent);
+            background-color: rgba(77, 130, 243, 0.05);
+        }
+        /* 👆 ここまで */
 
         input[type="time"].form-time,
         input[type="date"].form-date {
@@ -456,7 +500,8 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 32px;
+            /* 👇 スペース削減のためマージンを調整 */
+            margin-bottom: 16px;
         }
 
         .input-label {
@@ -499,16 +544,16 @@
         /* メーター（マンスリースケジュール）リスト */
         .meter-list {
             width: 100%;
-            margin-top: 32px;
+            /* 👇 スペース削減のためマージン・パディングを調整 */
+            margin-top: 16px;
+            padding-top: 16px;
             display: flex;
             flex-direction: column;
             gap: 14px;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
-            padding-top: 24px;
             flex-grow: 1;
         }
 
-        /* 個別アイテムのコンテナ（プログレスバーを含む） */
         .meter-row-container {
             display: flex;
             flex-direction: column;
@@ -550,7 +595,6 @@
             transition: color 0.3s ease;
         }
 
-        /* マンスリースケジュールの5日以内自動赤文字化 */
         .reward-tag.imminent {
             color: var(--red-accent) !important;
             font-weight: 700;
@@ -594,7 +638,6 @@
             background-color: rgba(242, 92, 92, 0.1);
         }
 
-        /* 各アイテム用のプログレスバー */
         .item-progress-track {
             width: 100%;
             height: 4px;
@@ -623,7 +666,6 @@
             display: none;
         }
 
-        /* 右下全体のプログレスバー（稼働額ベース） */
         .progress-track {
             width: 100%;
             height: 4px;
@@ -644,7 +686,7 @@
         @media (max-width: 768px) {
             .dashboard-container {
                 grid-template-columns: 1fr;
-                left: 0; /* スマホ画面等で幅が狭い場合は中央に戻す */
+                left: 0; 
             }
         }
     </style>
@@ -676,6 +718,15 @@
                 <input type="time" id="newPlanTime" class="form-time" value="13:00">
                 <input type="text" id="newPlanText" class="form-text" placeholder="新しい予定を入力...">
                 <button id="addPlanBtn" class="add-btn">追加</button>
+            </div>
+
+            <!-- 👇 追加：次回出勤日 -->
+            <div class="next-workday-container">
+                <div class="input-label">次回出勤日</div>
+                <div class="next-workday-wrapper">
+                    <input type="date" id="nextWorkdayInput" class="next-workday-input">
+                    <div class="next-workday-display" id="nextWorkdayDisplay">選択...</div>
+                </div>
             </div>
         </div>
 
@@ -726,6 +777,10 @@
         const newRewardDate = document.getElementById('newRewardDate');
         const addRewardBtn = document.getElementById('addRewardBtn');
 
+        // 次回出勤日用
+        const nextWorkdayInput = document.getElementById('nextWorkdayInput');
+        const nextWorkdayDisplay = document.getElementById('nextWorkdayDisplay');
+
         const targetDate = new Date('2035-01-01T00:00:00').getTime();
         const WORK_SECONDS_PER_YEAR = 20 * 12 * 9.5 * 3600;
 
@@ -742,6 +797,29 @@
             const dayStr = days[now.getDay()];
             headerDateDisplay.textContent = `${year}年${month}月${date}日(${dayStr})`;
         }
+
+        // --- 次回出勤日の表示更新 ---
+        function updateNextWorkday(dateStr) {
+            if (!dateStr) {
+                nextWorkdayDisplay.textContent = '選択...';
+                return;
+            }
+            const d = new Date(dateStr);
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            nextWorkdayDisplay.textContent = `${d.getMonth() + 1}/${d.getDate()}（${days[d.getDay()]}）`;
+        }
+
+        const savedNextWorkday = localStorage.getItem('nextWorkday');
+        if (savedNextWorkday) {
+            nextWorkdayInput.value = savedNextWorkday;
+            updateNextWorkday(savedNextWorkday);
+        }
+
+        nextWorkdayInput.addEventListener('change', (e) => {
+            const val = e.target.value;
+            localStorage.setItem('nextWorkday', val);
+            updateNextWorkday(val);
+        });
 
         // 背景グリッド生成
         function renderBaseTimeline() {
@@ -792,14 +870,6 @@
         
         let rewardItems = JSON.parse(localStorage.getItem('rewardItems')) || defaultRewards;
         
-        // 古いデータ形式からマイグレーション
-        rewardItems.forEach(item => {
-            if (item.price !== undefined) {
-                item.date = todayStrInit;
-                delete item.price;
-            }
-        });
-
         function getTimePercentage(timeStr) {
             const [h, m] = timeStr.split(':').map(Number);
             const currentMins = h * 60 + m;
@@ -838,9 +908,13 @@
                 const textClass = plan.completed ? 'completed' : '';
                 const checkIcon = plan.completed ? '✔' : '○';
 
+                // 👇 23時以降の予定はチェックボックスを非表示にする
+                const [h] = plan.time.split(':').map(Number);
+                const hideCheckStyle = h >= 23 ? 'display: none;' : '';
+
                 node.innerHTML = `
                     <div style="display: flex; align-items: center; overflow: hidden; flex-grow: 1;">
-                        <div class="plan-check-icon ${checkClass}" onclick="togglePlan(${index})" title="完了/未完了の切り替え">${checkIcon}</div>
+                        <div class="plan-check-icon ${checkClass}" onclick="togglePlan(${index})" title="完了/未完了の切り替え" style="${hideCheckStyle}">${checkIcon}</div>
                         <div class="node-text ${textClass}" onclick="startEdit(${index}, 'text')" title="クリックして編集">${plan.text}</div>
                     </div>
                     <div style="display: flex; align-items: center;">
@@ -866,7 +940,6 @@
             renderSchedule();
         };
 
-        // チェックリセットボタンの処理
         resetCheckBtn.addEventListener('click', () => {
             todayPlans.forEach(plan => plan.completed = false);
             renderSchedule();
@@ -922,19 +995,16 @@
         function renderRewards() {
             meterList.innerHTML = ''; 
             
-            // 当日の日付文字列生成 (ソート基準用)
             const d = new Date();
             const localTodayStr = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 
-            // 期限が迫っている（今日以降で日付が近い）ものほど上にするソート
             rewardItems.sort((a, b) => {
                 const aIsPast = a.date < localTodayStr;
                 const bIsPast = b.date < localTodayStr;
 
-                if (aIsPast && !bIsPast) return 1;  // 過去のものは下へ
-                if (!aIsPast && bIsPast) return -1; // 未来・今日のものは上へ
+                if (aIsPast && !bIsPast) return 1; 
+                if (!aIsPast && bIsPast) return -1; 
 
-                // どちらも未来、またはどちらも過去の場合は日付の昇順（近いものほど上）
                 return a.date.localeCompare(b.date);
             });
 
@@ -958,7 +1028,6 @@
                     </div>
                 `;
 
-                // 個別のプログレスバー追加
                 const progressTrack = document.createElement('div');
                 progressTrack.id = `reward-progress-${index}`;
                 progressTrack.className = 'item-progress-track';
@@ -981,7 +1050,7 @@
             rewardItems.push({ date: dateStr, label: label });
             newRewardText.value = '';
             newRewardDate.value = '';
-            renderRewards(); // 追加時に自動的に再ソートされます
+            renderRewards(); 
         });
 
         window.deleteReward = function(index) {
@@ -1104,7 +1173,6 @@
             const nowMs = Date.now();
             const now = new Date(nowMs);
 
-            // ヘッダーの日付更新
             updateHeaderDate(now);
 
             // 1. カウントダウン
@@ -1133,7 +1201,7 @@
                 parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                 moneyElement.textContent = parts.join('.');
 
-                // 4. プログレスバー (全体の稼働額ベース)
+                // 4. プログレスバー
                 const MAX_GOAL = 1500;
                 const progressPercent = Math.min((earned / MAX_GOAL) * 100, 100);
                 progressFill.style.width = `${progressPercent}%`;
@@ -1143,7 +1211,7 @@
                 progressFill.style.width = "0%";
             }
 
-            // 3. マンスリースケジュールの達成状態とプログレスバーの更新
+            // 3. マンスリースケジュール
             const todayStr = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0');
             
             rewardItems.forEach((item, index) => {
@@ -1153,12 +1221,10 @@
                 const tagEl = row.querySelector('.reward-tag');
                 const fill = document.getElementById(`reward-fill-${index}`);
 
-                // 期限日の23:59:59までを期限とする
                 const itemDate = new Date(item.date);
                 itemDate.setHours(23, 59, 59, 999);
                 
                 if (todayStr > item.date) {
-                    // 期限切れ・過去のもの（達成）
                     if (!row.classList.contains('achieved')) {
                         row.classList.add('achieved');
                         iconSpan.textContent = '⚫︎';
@@ -1169,20 +1235,17 @@
                     }
                     if (fill) {
                         fill.style.width = '100%';
-                        fill.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; // 目立たないグレー色で満たす
+                        fill.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'; 
                     }
                 } else {
-                    // 今日以降・未達成のもの
                     row.classList.remove('achieved');
                     iconSpan.textContent = '⚪︎';
                     iconSpan.style.color = 'var(--text-secondary)';
                     
                     if (fill) {
-                        // 期限日と現在日時の差（日数）を計算
                         const diffMs = itemDate.getTime() - nowMs;
                         const diffDays = diffMs / (1000 * 60 * 60 * 24);
                         
-                        // 5日以内の自動赤文字化
                         if (tagEl) {
                             if (diffDays <= 5) {
                                 tagEl.classList.add('imminent');
@@ -1191,7 +1254,6 @@
                             }
                         }
 
-                        // 残り30日以上を0%とし、期限（残り0日）に近づくほど100%に増える計算
                         const maxDays = 30;
                         let percent = 0;
                         if (diffDays >= maxDays) {
@@ -1202,12 +1264,11 @@
                             percent = ((maxDays - diffDays) / maxDays) * 100;
                         }
                         
-                        // ★修正部分：残り日数によって色を変化（緑 → オレンジ → 赤）
-                        let color = 'var(--green-accent)'; // 14日より先は緑
+                        let color = 'var(--green-accent)'; 
                         if (diffDays <= 3) {
-                            color = 'var(--red-accent)';    // 残り3日以内で赤
+                            color = 'var(--red-accent)';    
                         } else if (diffDays <= 14) {
-                            color = 'var(--orange-accent)'; // 残り14日以内でオレンジ
+                            color = 'var(--orange-accent)'; 
                         }
                         
                         fill.style.width = `${percent}%`;
