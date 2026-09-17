@@ -91,6 +91,10 @@
             grid-template-columns: 1fr 1fr;
             gap: 24px;
             margin-top: 40px;
+            /* 👇 パネル全体の位置を右に寄せるための設定 👇 */
+            position: relative;
+            left: 50px; /* 数値を大きくすると右へ、マイナスにすると左へ移動します */
+            /* 👆 --------------------------------------- 👆 */
         }
 
         .card {
@@ -640,6 +644,7 @@
         @media (max-width: 768px) {
             .dashboard-container {
                 grid-template-columns: 1fr;
+                left: 0; /* スマホ画面等で幅が狭い場合は中央に戻す */
             }
         }
     </style>
