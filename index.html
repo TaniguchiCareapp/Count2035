@@ -1202,14 +1202,12 @@
                             percent = ((maxDays - diffDays) / maxDays) * 100;
                         }
                         
-                        // 残り日数によって色を変化
-                        let color = 'var(--green-accent)';
+                        // ★修正部分：残り日数によって色を変化（緑 → オレンジ → 赤）
+                        let color = 'var(--green-accent)'; // 14日より先は緑
                         if (diffDays <= 3) {
-                            color = 'var(--red-accent)';
-                        } else if (diffDays <= 7) {
-                            color = 'var(--orange-accent)';
+                            color = 'var(--red-accent)';    // 残り3日以内で赤
                         } else if (diffDays <= 14) {
-                            color = 'var(--blue-accent)';
+                            color = 'var(--orange-accent)'; // 残り14日以内でオレンジ
                         }
                         
                         fill.style.width = `${percent}%`;
