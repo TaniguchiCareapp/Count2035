@@ -23,7 +23,8 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            /* 画面中央配置をやめて上部に寄せる */
+            padding-top: 24px;
             align-items: center;
             background-color: var(--bg-color);
             color: var(--text-primary);
@@ -86,7 +87,7 @@
             /* TODAY'S SCHEDULE(左)の幅を広げ、MONTHLY SCHEDULE(右)との比率を変更 */
             grid-template-columns: 1.4fr 1fr;
             gap: 24px;
-            margin-top: 40px;
+            margin-top: 0; /* 余白を詰めるために0に変更 */
             position: relative;
             left: 150px; 
         }
@@ -380,12 +381,12 @@
         /* 👇 日報投稿・次回出勤日のコンテナ */
         .daily-task-container {
             width: 100%;
-            margin-top: 16px;
-            padding-top: 16px;
+            margin-top: 12px;
+            padding-top: 12px;
             border-top: 1px dashed rgba(255, 255, 255, 0.05);
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 6px; /* 縦の余白を縮小 */
         }
 
         .daily-task-row {
@@ -521,7 +522,6 @@
         /* メーター（マンスリースケジュール）リスト */
         .meter-list {
             width: 100%;
-            /* 👇 ボーダーを消し、スペースを詰めました */
             margin-top: 4px;
             padding-top: 0;
             display: flex;
@@ -709,7 +709,6 @@
                 <input type="date" id="newRewardDate" class="form-date">
                 <button id="addRewardBtn" class="add-btn">追加</button>
             </div>
-            <!-- ここにあった全体の稼働額プログレスバーは削除されました -->
         </div>
 
     </div>
@@ -741,7 +740,7 @@
         const WORK_SECONDS_PER_YEAR = 20 * 12 * 9.5 * 3600;
 
         const START_MINS = 9 * 60;          
-        const END_MINS = 24 * 60;           
+        const END_MINS = 24 * 60;            
         const TOTAL_MINS = END_MINS - START_MINS; 
 
         // --- 次回出勤日のクリックでカレンダーを開く処理 ---
